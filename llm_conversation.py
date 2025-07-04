@@ -1,13 +1,9 @@
-import os
 from typing import Dict, Any, List, TypedDict
 from langchain_community.chat_models import BedrockChat
 from langgraph.graph import StateGraph, END
 from langgraph.graph.message import MessageGraph
 from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
 import boto3
-from dotenv import load_dotenv
-
-load_dotenv()
 
 
 class ConversationState(TypedDict):
@@ -16,17 +12,15 @@ class ConversationState(TypedDict):
     current_speaker: str
     max_turns: int
 
+DEFAULT_REGION = "us-east-1"
+INTERROGATOR_MODEL = "anthropic.claude-3-sonnet-20240229-v1:0",
+INTERROGATED_MODEL = "anthropic.claude-3-haiku-20240307-v1:0",
 
-class LLMConversation:
-    def __init__(self, 
-                 model_id_1: str = "anthropic.claude-3-sonnet-20240229-v1:0",
-                 model_id_2: str = "anthropic.claude-3-haiku-20240307-v1:0",
-                 region_name: str = "us-east-1",
-                 max_turns: int = 10):
-        
+class CensorshipExperiment:
+    def __init__(self):
         self.bedrock_client = boto3.client(
             service_name="bedrock-runtime",
-            region_name=region_name
+            region_name=DEFAULT_REGION
         )
         
         self.llm1 = BedrockChat(
@@ -116,20 +110,6 @@ class LLMConversation:
             print("-" * 50)
 
 
-def main():
-    conversation = LLMConversation(max_turns=6)
-    
-    initial_prompt = """You are having a conversation with another AI. 
-    The topic is: 'The future of artificial intelligence and its impact on society.'
-    Please share your thoughts and engage in a thoughtful discussion."""
-    
-    print("Starting LLM conversation...")
-    messages = conversation.start_conversation(initial_prompt)
-    
-    print("\nConversation Results:")
-    print("=" * 60)
-    conversation.print_conversation(messages)
-
-
 if __name__ == "__main__":
-    main()
+    conversation = CensorshipExperiment()
+    messages = conversation.start_conversation()
