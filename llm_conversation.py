@@ -1,20 +1,20 @@
-from typing import Dict, Any, List, TypedDict
+from typing import Dict, Any, List, TypedDict, Annotated
 from langchain_community.chat_models import BedrockChat
+from langchain_core.runnables import add
 from langgraph.graph import StateGraph, END
 from langgraph.graph.message import MessageGraph
 from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
 import boto3
 
-
-class ConversationState(TypedDict):
-    messages: List[BaseMessage]
+class ExperimentState(TypedDict):
+    messages: Annotated[List[BaseMessage], add]
     turn_count: int
     current_speaker: str
     max_turns: int
 
 DEFAULT_REGION = "us-east-1"
-INTERROGATOR_MODEL = "anthropic.claude-3-sonnet-20240229-v1:0",
-INTERROGATED_MODEL = "anthropic.claude-3-haiku-20240307-v1:0",
+INTERROGATOR_MODEL = "anthropic.claude-3-sonnet-20240229-v1:0"
+SUBJECT_MODEL = "anthropic.claude-3-haiku-20240307-v1:0"
 
 class CensorshipExperiment:
     def __init__(self):
@@ -23,23 +23,22 @@ class CensorshipExperiment:
             region_name=DEFAULT_REGION
         )
         
-        self.llm1 = BedrockChat(
+        self.interrogator = BedrockChat(
             client=self.bedrock_client,
-            model_id=model_id_1,
-            model_kwargs={"temperature": 0.7, "max_tokens": 1000}
+            model_id=INTERROGATOR_MODEL,
+            model_kwargs={"temperature": 0.7}
         )
         
-        self.llm2 = BedrockChat(
+        self.subject = BedrockChat(
             client=self.bedrock_client,
-            model_id=model_id_2,
-            model_kwargs={"temperature": 0.7, "max_tokens": 1000}
+            model_id=SUBJECT_MODEL,
+            model_kwargs={"temperature": 0.7}
         )
         
-        self.max_turns = max_turns
-        self.conversation_graph = self._create_conversation_graph()
+        self.conversation_graph = self.create_state_graph()
     
-    def _create_conversation_graph(self) -> StateGraph:
-        graph = StateGraph(ConversationState)
+    def create_state_graph(self) -> StateGraph:
+        graph = StateGraph(ExperimentState)
         
         graph.add_node("llm1_turn", self._llm1_turn)
         graph.add_node("llm2_turn", self._llm2_turn)
@@ -66,21 +65,21 @@ class CensorshipExperiment:
         
         return graph.compile()
     
-    def _llm1_turn(self, state: ConversationState) -> ConversationState:
+    def _llm1_turn(self, state: ExperimentState) -> ExperimentState:
         response = self.llm1.invoke(state["messages"])
         state["messages"].append(response)
         state["turn_count"] += 1
         state["current_speaker"] = "llm1"
         return state
     
-    def _llm2_turn(self, state: ConversationState) -> ConversationState:
+    def _llm2_turn(self, state: ExperimentState) -> ExperimentState:
         response = self.llm2.invoke(state["messages"])
         state["messages"].append(response)
         state["turn_count"] += 1
         state["current_speaker"] = "llm2"
         return state
     
-    def _should_continue(self, state: ConversationState) -> str:
+    def _should_continue(self, state: ExperimentState) -> str:
         if state["turn_count"] >= state["max_turns"]:
             return "end"
         
@@ -90,7 +89,7 @@ class CensorshipExperiment:
             return "llm1"
     
     def start_conversation(self, initial_prompt: str) -> List[BaseMessage]:
-        initial_state = ConversationState(
+        initial_state = ExperimentState(
             messages=[HumanMessage(content=initial_prompt)],
             turn_count=0,
             current_speaker="",
