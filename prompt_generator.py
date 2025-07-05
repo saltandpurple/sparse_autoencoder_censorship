@@ -22,9 +22,6 @@ class PromptGenerator:
             service_name="bedrock-runtime",
             region_name=DEFAULT_REGION
         )
-        self.lmstudio_client = ChatOpenAI(
-            base_url="http://192.168.178.61:1234/v1"
-            )
 
         # models
         self.prompt_generator = ChatBedrock(
@@ -33,7 +30,7 @@ class PromptGenerator:
             model_kwargs={"temperature": 0.7}
         )
         self.subject = ChatOpenAI(
-            client=self.lmstudio_client,
+            base_url="http://192.168.178.61:1234/v1",
             model="deepseek/deepseek-r1-0528-qwen3-8b",
             temperature=0.7
         )
