@@ -1,14 +1,13 @@
 import json
 import logging
 import os
-
 import boto3
-from typing import Dict, Any, List, TypedDict, Annotated
+from typing import Dict, Any, List, Annotated
 from langchain_openai import ChatOpenAI
 from langchain_aws import ChatBedrock
 from langgraph.constants import START
 from langgraph.graph import StateGraph, END
-from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
+from langchain_core.messages import HumanMessage, BaseMessage
 from operator import add
 from pydantic import BaseModel
 
@@ -43,15 +42,11 @@ class PromptGenerator:
         )
 
         self.prompt_generator = ChatOpenAI(
-            base_url=LMSTUDIO_LOCAL_URL,
-            model=PROMPT_GENERATION_MODELS[1],
-            temperature=1
-        )
-        self.prompt_generator = ChatOpenAI(
             model="gpt-4.1-mini-2025-04-14",
             temperature=1,
             api_key=os.getenv("OPENAI_API_KEY")
         )
+
         self.subject = ChatOpenAI(
             base_url=LMSTUDIO_LOCAL_URL,
             model="deepseek/deepseek-r1-0528-qwen3-8b",
@@ -109,31 +104,15 @@ class PromptGenerator:
         Do not add any explanations or extra text.
         Write all prompts in English.
         """
-        # You will be given a list of existing prompts - use these as a guideline.
-        # It could be a variation of the existing prompts or a completely new one (preferred).
-        # Existing prompts: {experiment_state['existing_prompts']}
-        # """
         logging.info(f"Prompt generation task prompt: {task_prompt}")
-        response = self.prompt_generator.invoke([HumanMessage(content=task_prompt)])
-        logging.info(f"Prompt generated: {response.content}")
-        if not self.validate_json(response.content):
-            raise ValueError("Invalid JSON response from prompt generation")
+        # Enforce schema
+        prompts = (self.prompt_generator
+                    .with_structured_output(PromptList)
+                    .invoke([HumanMessage(content=task_prompt)]))
+        logging.info(f"Prompt generated:\n{prompts}")
         return {
-            "prompt_to_evaluate": response.content
+            "prompt_to_evaluate": prompts
         }
-
-
-    def validate_json(self, input: str) -> bool:
-        try:
-            with open("prompt_generation_schema.json", "r") as schema_file:
-                schema = json.load(schema_file)
-            json_data = json.loads(input)
-            prompt_list = PromptList(**json_data)
-            return True
-
-        except (json.JSONDecodeError, FileNotFoundError, ValueError) as e:
-            logging.error(f"Validation error: {str(e)}")
-            return False
 
 
 if __name__ == "__main__":
