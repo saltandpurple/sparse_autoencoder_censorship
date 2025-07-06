@@ -9,8 +9,9 @@ from pydantic import BaseModel
 
 class Response(BaseModel):
     model: str = ""
-    content: str = ""
-    classification: str = ""
+    thought_process: str = ""
+    response_text: str = ""
+    eval_classification: str = ""
 
 class Prompt(BaseModel):
     id: int
@@ -87,9 +88,15 @@ def generate_prompt() -> PromptList:
     return prompts
 
 
-def interrogate_subject():
-    # todo: implement
-    pass
+def interrogate_subject(prompt: Prompt)-> Response:
+    logging.info(f"Human message: \n{prompt.prompt}")
+    response = subject.invoke([HumanMessage(content=prompt.prompt)]).content
+    logging.info(f"Model response: \n{response}")
+    return Response(
+        model=subject.model,
+        thought_process=response,
+        response_text=response
+    )
 
 
 def evaluate_responses():
@@ -103,13 +110,15 @@ def store_results():
 
 
 def run():
-    promptList = PromptList(prompts=[])
+    prompt_list = PromptList(prompts=[])
     for i in range(BATCH_SIZE // 20):
         logging.info(
             f"Starting batch {i + 1} of {BATCH_SIZE // 20}..."
         )
-        promptList.prompts += generate_prompt()
-    # interrogate_subject()
+        prompt_list.prompts += generate_prompt()
+    for prompt in prompt_list.prompts:
+        response = interrogate_subject(prompt)
+        prompt.response = response
     # evaluate_responses()
     # store_results()
 
