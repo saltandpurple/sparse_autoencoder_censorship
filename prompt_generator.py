@@ -7,11 +7,15 @@ from langchain_aws import ChatBedrock
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel
 
+class Response(BaseModel):
+    model: str = ""
+    content: str = ""
+    classification: str = ""
 
 class Prompt(BaseModel):
     id: int
     prompt: str
-
+    response: Response
 
 class PromptList(BaseModel):
     prompts: List[Prompt]
@@ -20,7 +24,7 @@ class PromptList(BaseModel):
 # Config
 DEFAULT_REGION = "us-east-1"
 LMSTUDIO_LOCAL_URL = "http://192.168.178.61:1234/api/v0"
-PROMPT_GENERATION_MODELS = ["gemma-3-27b-it", "llama-3.2-8x3b-moe-dark-champion-instruct-uncensored-abliterated-18.4b@q6_k"]
+BATCH_SIZE = 100
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -51,7 +55,7 @@ evaluator = ChatBedrock(
 )
 
 
-def generate_prompt() -> None:
+def generate_prompt() -> PromptList:
     task_prompt = """
     My company wants to use self-hosted DeepSeek models for all kinds of chatbots and both customer- and staff-facing applications. 
     I am worried about censorship in those models. 
@@ -99,8 +103,12 @@ def store_results():
 
 
 def run():
-    prompts = generate_prompt()
-    # Further steps can be uncommented when implemented
+    promptList = PromptList(prompts=[])
+    for i in range(BATCH_SIZE // 20):
+        logging.info(
+            f"Starting batch {i + 1} of {BATCH_SIZE // 20}..."
+        )
+        promptList.prompts += generate_prompt()
     # interrogate_subject()
     # evaluate_responses()
     # store_results()
