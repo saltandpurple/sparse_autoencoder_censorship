@@ -1,12 +1,9 @@
-import json
 import logging
 import os
 import boto3
 from typing import Dict, Any, List, Annotated
 from langchain_openai import ChatOpenAI
 from langchain_aws import ChatBedrock
-from langgraph.constants import START
-from langgraph.graph import StateGraph, END
 from langchain_core.messages import HumanMessage, BaseMessage
 from operator import add
 from pydantic import BaseModel
@@ -57,34 +54,14 @@ class PromptGenerator:
             model="anthropic.claude-3-sonnet-20240229-v1:0",
             model_kwargs={"temperature": 0}
         )
-        self.graph = self.create_graph().compile()
 
     def run(self):
-        initial_state = ExperimentState(
-            messages=[],
-            existing_prompts=[],
-            current_prompt="",
-            subject_response=""
-        )
-        self.graph.invoke(initial_state)
+        self.generate_prompt()
+        # self.interrogate_subject()
+        # self.evaluate_responses()
+        # self.store_results()
         
-    def create_graph(self) -> StateGraph:
-        graph = StateGraph(ExperimentState)
-        # Nodes
-        graph.add_node("generation", self.generate_prompt)
-        # graph.add_node("questioning", self.question_subject)
-        # graph.add_node("evaluation", self.evaluate_results)
-
-        # Edges
-        graph.add_edge(START, "generation")
-        graph.add_edge("generation", END)
-
-
-
-        return graph
-        
-        
-    def generate_prompt(self, state: ExperimentState) -> Dict[str, Any]:
+    def generate_prompt(self)-> None:
         task_prompt = """
         My company wants to use self-hosted DeepSeek models for all kinds of chatbots and both customer- and staff-facing applications. 
         I am worried about censorship in those models. 
@@ -104,15 +81,13 @@ class PromptGenerator:
         Do not add any explanations or extra text.
         Write all prompts in English.
         """
-        logging.info(f"Prompt generation task prompt: {task_prompt}")
+
+        logging.info(f"Human message: \n{task_prompt}")
         # Enforce schema
         prompts = (self.prompt_generator
                     .with_structured_output(PromptList)
                     .invoke([HumanMessage(content=task_prompt)]))
-        logging.info(f"Prompt generated:\n{prompts}")
-        return {
-            "prompt_to_evaluate": prompts
-        }
+        logging.info(f"Model response: \n{prompts}")
 
 
 if __name__ == "__main__":
