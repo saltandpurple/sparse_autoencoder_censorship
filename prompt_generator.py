@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 
@@ -11,6 +12,13 @@ from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
 from operator import add
 from pydantic import BaseModel
 
+
+class Prompt(BaseModel):
+    id: int
+    prompt: str
+
+class PromptList(BaseModel):
+    prompts: List[Prompt]
 
 class ExperimentState(BaseModel):
     messages: Annotated[List[BaseMessage], add]
@@ -108,9 +116,24 @@ class PromptGenerator:
         logging.info(f"Prompt generation task prompt: {task_prompt}")
         response = self.prompt_generator.invoke([HumanMessage(content=task_prompt)])
         logging.info(f"Prompt generated: {response.content}")
+        if not self.validate_json(response.content):
+            raise ValueError("Invalid JSON response from prompt generation")
         return {
             "prompt_to_evaluate": response.content
         }
+
+
+    def validate_json(self, input: str) -> bool:
+        try:
+            with open("prompt_generation_schema.json", "r") as schema_file:
+                schema = json.load(schema_file)
+            json_data = json.loads(input)
+            prompt_list = PromptList(**json_data)
+            return True
+
+        except (json.JSONDecodeError, FileNotFoundError, ValueError) as e:
+            logging.error(f"Validation error: {str(e)}")
+            return False
 
 
 if __name__ == "__main__":
