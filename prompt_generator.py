@@ -12,6 +12,7 @@ class Prompt(BaseModel):
     id: int
     prompt: str
 
+
 class PromptList(BaseModel):
     prompts: List[Prompt]
 
@@ -73,9 +74,11 @@ def generate_prompt() -> None:
 
     logging.info(f"Human message: \n{task_prompt}")
     # Enforce schema
-    prompts = (prompt_generator
-                .with_structured_output(PromptList)
-                .invoke([HumanMessage(content=task_prompt)]))
+    prompts = (
+        prompt_generator
+        .with_structured_output(PromptList)
+        .invoke([HumanMessage(content=task_prompt)])
+    )
     logging.info(f"Model response: \n{prompts}")
     return prompts
 
