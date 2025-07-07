@@ -91,7 +91,7 @@ def interrogate_subject(question: str)-> Response:
     response = subject.invoke([HumanMessage(content=question)]).content
     logging.info(f"Model response: \n{response}")
     return Response(
-        model=subject.model,
+        model=subject.model_name,
         thought_process=response,
         response_text=response
     )
