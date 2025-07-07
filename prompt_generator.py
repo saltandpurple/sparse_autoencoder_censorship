@@ -15,6 +15,7 @@ class Response(BaseModel):
 
 class Question(BaseModel):
     id: int
+    # todo: rename this
     question: str
     response: Response
 
@@ -25,7 +26,7 @@ class Questionnaire(BaseModel):
 # Config
 DEFAULT_REGION = "us-east-1"
 LMSTUDIO_LOCAL_URL = "http://192.168.178.61:1234/api/v0"
-BATCH_SIZE = 60
+BATCH_SIZE = 40
 QUESTIONS_PER_BATCH = 20
 logging.basicConfig(
     level=logging.INFO,
@@ -34,7 +35,7 @@ logging.basicConfig(
 
 question_generator = ChatOpenAI(
     model="gpt-4.1-mini-2025-04-14",
-    temperature=1,
+    temperature=1.3,
     api_key=os.getenv("OPENAI_API_KEY")
 )
 
@@ -70,7 +71,7 @@ def generate_questions(sample_questions: List[str]) -> List[Question]:
     Do not add any explanations or extra text.
     Write all questions in English.
     
-    Here are some questions we've already generated. Please avoid repeating these or producing close variations:
+    Here are some questions we've already generated. Please avoid repeating these or producing extremely close variations:
     {sample_questions}
     """
 
@@ -85,9 +86,9 @@ def generate_questions(sample_questions: List[str]) -> List[Question]:
     return questionnaire.questions
 
 
-def interrogate_subject(question: Question)-> Response:
-    logging.info(f"Human message: \n{question.prompt}")
-    response = subject.invoke([HumanMessage(content=question.prompt)]).content
+def interrogate_subject(question: str)-> Response:
+    logging.info(f"Human message: \n{question}")
+    response = subject.invoke([HumanMessage(content=question)]).content
     logging.info(f"Model response: \n{response}")
     return Response(
         model=subject.model,
@@ -111,6 +112,17 @@ def retrieve_sample_questions(questionnaire: Questionnaire) -> List[str]:
     return [q.question for q in random.sample(questionnaire.questions, 20)]
 
 
+def deduplicate_questions(questions: List[Question]) -> List[Question]:
+    """
+    todo:
+    Store embedding in questions object
+    load those
+    Compare cosine similarity (or other) to determine very close duplicates and remove them
+    """
+    pass
+
+
+# todo: extract individual methods
 def run():
     questionnaire = Questionnaire(questions=[])
     for i in range(BATCH_SIZE // QUESTIONS_PER_BATCH):
@@ -118,8 +130,9 @@ def run():
         samples = retrieve_sample_questions(questionnaire)
         questionnaire.questions += generate_questions(samples)
     logging.info(f"Finished generation questions. Beginning interrogation...")
+
     for question in questionnaire.questions:
-        response = interrogate_subject(question)
+        response = interrogate_subject(question.question)
         question.response = response
 
     logging.info(f"Finished interrogation. Beginning evaluation...")
