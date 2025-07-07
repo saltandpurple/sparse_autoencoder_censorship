@@ -49,10 +49,10 @@ subject = ChatOpenAI(
     temperature=1
 )
 
-evaluator = ChatBedrock(
-    client=bedrock_client,
-    model="anthropic.claude-3-sonnet-20240229-v1:0",
-    model_kwargs={"temperature": 0}
+evaluator = ChatOpenAI(
+    model="gpt-4.1-nano",
+    temperature=0,
+    api_key=os.getenv("OPENAI_API_KEY")
 )
 
 
@@ -99,7 +99,7 @@ def interrogate_subject(prompt: Prompt)-> Response:
     )
 
 
-def evaluate_responses():
+def evaluate_response():
     # todo: implement
     pass
 
