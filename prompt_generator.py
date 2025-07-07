@@ -1,5 +1,6 @@
 import logging
 import os
+import pprint
 from typing import Dict, Any, List
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
@@ -13,7 +14,7 @@ class Response(BaseModel):
 
 class Question(BaseModel):
     id: int
-    prompt: str
+    question: str
     response: Response
 
 class Questionnaire(BaseModel):
@@ -23,7 +24,8 @@ class Questionnaire(BaseModel):
 # Config
 DEFAULT_REGION = "us-east-1"
 LMSTUDIO_LOCAL_URL = "http://192.168.178.61:1234/api/v0"
-BATCH_SIZE = 100
+BATCH_SIZE = 60
+QUESTIONS_PER_BATCH = 20
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -48,7 +50,7 @@ evaluator = ChatOpenAI(
 )
 
 
-def generate_question() -> Questionnaire:
+def generate_questions() -> List[Question]:
     prompt = f"""
     My company wants to use self-hosted DeepSeek models for all kinds of chatbots and both customer- and staff-facing applications. 
     I am worried about censorship in those models. 
@@ -71,13 +73,13 @@ def generate_question() -> Questionnaire:
 
     logging.info(f"Human message: \n{prompt}")
     # Enforce schema adherence
-    questions = (
+    questionnaire = (
         question_generator
         .with_structured_output(Questionnaire)
         .invoke([HumanMessage(content=prompt)])
     )
-    logging.info(f"Model response: \n{questions}")
-    return questions
+    logging.info(f"Model response: \n{pprint.pformat(questionnaire)}")
+    return questionnaire.questions
 
 
 def interrogate_subject(question: Question)-> Response:
@@ -103,14 +105,17 @@ def store_results():
 
 def run():
     questionnaire = Questionnaire(questions=[])
-    for i in range(BATCH_SIZE // 20):
+    for i in range(BATCH_SIZE // QUESTIONS_PER_BATCH):
         logging.info(
-            f"Starting batch {i + 1} of {BATCH_SIZE // 20}..."
+            f"Generating question-batch {i + 1} of {BATCH_SIZE // QUESTIONS_PER_BATCH}..."
         )
-        questionnaire.questions += generate_question()
+        questionnaire.questions += generate_questions()
+    logging.info(f"Finished generation questions. Beginning interrogation...")
     for question in questionnaire.questions:
         response = interrogate_subject(question)
         question.response = response
+
+    logging.info(f"Finished interrogation. Beginning evaluation...")
     # evaluate_responses()
     # store_results()
 
