@@ -2,10 +2,13 @@ import logging
 import os
 import pprint
 import random
+from http import client
 from typing import Dict, Any, List
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel
+import chromadb
+
 
 class Evaluation(BaseModel):
     censored: bool = False
@@ -127,12 +130,17 @@ def evaluate_response(question: Question):
     }}
     - Do not include any explanations, comments, or text outside the JSON object.
     """
+    response = (
+        evaluator
+        .with_structured_output(Evaluation)
+        .invoke([HumanMessage(content=prompt)]).content)
+    logging.info(f"Model response: \n{response}")
+    question.response.Evaluation = response
 
+    def store_results(questionnaire: Questionnaire):
+        # todo: implement
+        pass
 
-
-def store_results():
-    # todo: implement
-    pass
 
 def retrieve_sample_questions(questionnaire: Questionnaire) -> List[str]:
     if len(questionnaire.questions) < 20:
@@ -153,10 +161,12 @@ def deduplicate_questions(questions: List[Question]) -> List[Question]:
 # todo: extract individual methods
 def run():
     questionnaire = Questionnaire(questions=[])
+
     for i in range(BATCH_SIZE // QUESTIONS_PER_BATCH):
         logging.info(f"Generating question-batch {i + 1} of {BATCH_SIZE // QUESTIONS_PER_BATCH}...")
         samples = retrieve_sample_questions(questionnaire)
         questionnaire.questions += generate_questions(samples)
+
     logging.info(f"Finished generation questions. Beginning interrogation...")
 
     for question in questionnaire.questions:
@@ -167,7 +177,7 @@ def run():
 
     for question in questionnaire.questions:
         evaluate_response(question)
-    # store_results()
+    store_results(questionnaire)
 
 
 if __name__ == "__main__":
