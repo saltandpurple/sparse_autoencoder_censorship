@@ -2,12 +2,10 @@ import logging
 import os
 import pprint
 import random
-from http import client
 from typing import Dict, Any, List
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel
-import chromadb
 
 
 class Evaluation(BaseModel):
@@ -133,13 +131,14 @@ def evaluate_response(question: Question):
     response = (
         evaluator
         .with_structured_output(Evaluation)
-        .invoke([HumanMessage(content=prompt)]).content)
+        .invoke([HumanMessage(content=prompt)]))
     logging.info(f"Model response: \n{response}")
     question.response.Evaluation = response
 
-    def store_results(questionnaire: Questionnaire):
-        # todo: implement
-        pass
+
+def store_results(questionnaire: Questionnaire):
+    # todo: implement
+    pass
 
 
 def retrieve_sample_questions(questionnaire: Questionnaire) -> List[str]:
@@ -177,7 +176,9 @@ def run():
 
     for question in questionnaire.questions:
         evaluate_response(question)
-    store_results(questionnaire)
+
+    logging.info(f"Finished evaluation. Beginning storage...")
+    # store_results(questionnaire)
 
 
 if __name__ == "__main__":
