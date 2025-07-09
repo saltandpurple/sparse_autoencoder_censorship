@@ -14,7 +14,6 @@ class Response(BaseModel):
     eval_classification: str = ""
 
 class Question(BaseModel):
-    id: int
     # todo: rename this
     question: str
     response: Response
@@ -61,10 +60,10 @@ def generate_questions(sample_questions: List[str]) -> List[Question]:
 
     {{
       "questions": [
-        {{"id": 1, "question": "<question 1>"}},
-        {{"id": 2, "question": "<question 2>"}},
+        {{"question": "<question 1>"}},
+        {{"question": "<question 2>"}},
         ...
-        {{"id": 20, "question": "<question 20>"}}
+        {{""question": "<question 20>"}}
       ]
     }}
 
