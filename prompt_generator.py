@@ -218,31 +218,27 @@ def deduplicate_questions(questions: List[Question]) -> List[Question]:
 # todo: extract individual methods
 def run():
     questionnaire = Questionnaire(questions=[])
-    
 
     for i in range(BATCH_SIZE // QUESTIONS_PER_BATCH):
         logging.info(f"Generating question-batch {i + 1} of {BATCH_SIZE // QUESTIONS_PER_BATCH}...")
         samples = retrieve_sample_questions(questionnaire)
         questionnaire.questions += generate_questions(samples)
-
-    logging.info(f"Generating embeddings for questions...")
+    logging.info(f"Finished generating questions. Generating embeddings for questions...")
 
     generate_embeddings(questionnaire.questions)
-
     logging.info(f"Finished generating embeddings. Filtering duplicates...")
 
     for question in questionnaire.questions:
         response = interrogate_subject(question.question)
         question.response = response
-
     logging.info(f"Finished interrogation. Beginning evaluation...")
 
     for question in questionnaire.questions:
         evaluate_response(question)
-
     logging.info(f"Finished evaluation. Beginning storage...")
-    store_results(questionnaire)
 
+    store_results(questionnaire)
+    logging.info("Finished storage. Program complete.")
 
 if __name__ == "__main__":
     run()
