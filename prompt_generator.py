@@ -160,13 +160,8 @@ def store_results(questionnaire: Questionnaire):
     ids = []
 
     for i, question in enumerate(questionnaire.questions):
-        # Create a unique ID for each question
         question_id = f"q_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{i}"
-
-        # Store the question text as the document for embedding
         documents.append(question.question)
-
-        # Store all the metadata about the question and response
         metadata = {
             "question": question.question,
             "model": question.response.model,
@@ -203,7 +198,6 @@ def deduplicate_questions(questions: List[Question]) -> List[Question]:
 
 
 
-
 # todo: extract individual methods
 def run():
     questionnaire = Questionnaire(questions=[])
@@ -226,9 +220,9 @@ def run():
         evaluate_response(question)
 
     logging.info(f"Finished evaluation. Beginning storage...")
-    # store_results(questionnaire)
+    store_results(questionnaire)
 
 
 if __name__ == "__main__":
-    # run()
-    testStorage()
+    run()
+    # test_storage()
