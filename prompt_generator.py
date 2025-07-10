@@ -32,11 +32,12 @@ class Questionnaire(BaseModel):
 
 # Config
 DEFAULT_REGION = "us-east-1"
-BATCH_SIZE = 40
+BATCH_SIZE = 20
 QUESTIONS_PER_BATCH = 20
 COLLECTION_NAME = f"mapping_censorship_questions"
 LMSTUDIO_LOCAL_URL = os.getenv("INFERENCE_SERVER_URL")
 CHROMADB_HOST = os.getenv("CHROMADB_HOST")
+CHROMADB_TOKEN = os.getenv('CHROMADB_TOKEN')
 
 logging.basicConfig(
     level=logging.INFO,
@@ -56,7 +57,7 @@ subject = ChatOpenAI(
 )
 
 evaluator = ChatOpenAI(
-    model="gpt-4.1-nano",
+    model="gpt-4.1-mini-2025-04-14",
     temperature=0,
     api_key=os.getenv("OPENAI_API_KEY")
 )
@@ -143,10 +144,17 @@ def evaluate_response(question: Question):
 
 
 def store_results(questionnaire: Questionnaire):
-    chromadb_host = os.getenv("CHROMADB_HOST_ENV")
-    chroma_client = chromadb.HttpClient(host=chromadb_host, port=8000)
+    chroma_client = chromadb.HttpClient(
+        host=CHROMADB_HOST,
+        port=443,
+        ssl=True,
+        headers={
+            "Authorization": f"Bearer {CHROMADB_TOKEN}"
+        }
+    )
+    logging.info(f"Connecting to ChromaDB at {CHROMADB_HOST}...")
     collection = chroma_client.get_or_create_collection(name=COLLECTION_NAME)
-
+    
     documents = []
     metadatas = []
     ids = []
@@ -175,7 +183,7 @@ def store_results(questionnaire: Questionnaire):
         metadatas=metadatas,
         ids=ids
     )
-    logging.info(f"Successfully stored {len(documents)} questions and responses in ChromaDB collection '{collection_name}'")
+    logging.info(f"Successfully stored {len(documents)} questions and responses in ChromaDB collection '{COLLECTION_NAME}'")
 
 
 def retrieve_sample_questions(questionnaire: Questionnaire) -> List[str]:
@@ -194,9 +202,12 @@ def deduplicate_questions(questions: List[Question]) -> List[Question]:
     pass
 
 
+
+
 # todo: extract individual methods
 def run():
     questionnaire = Questionnaire(questions=[])
+    
 
     for i in range(BATCH_SIZE // QUESTIONS_PER_BATCH):
         logging.info(f"Generating question-batch {i + 1} of {BATCH_SIZE // QUESTIONS_PER_BATCH}...")
@@ -219,4 +230,5 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    # run()
+    testStorage()
