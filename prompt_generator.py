@@ -2,7 +2,10 @@ import logging
 import os
 import pprint
 import random
+import chromadb
+import os
 from typing import Dict, Any, List
+from datetime import datetime
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel
@@ -29,9 +32,12 @@ class Questionnaire(BaseModel):
 
 # Config
 DEFAULT_REGION = "us-east-1"
-LMSTUDIO_LOCAL_URL = "http://192.168.178.61:1234/api/v0"
 BATCH_SIZE = 40
 QUESTIONS_PER_BATCH = 20
+COLLECTION_NAME = f"mapping_censorship_questions"
+LMSTUDIO_LOCAL_URL = os.getenv("INFERENCE_SERVER_URL")
+CHROMADB_HOST = os.getenv("CHROMADB_HOST")
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -137,8 +143,39 @@ def evaluate_response(question: Question):
 
 
 def store_results(questionnaire: Questionnaire):
-    # todo: implement
-    pass
+    chromadb_host = os.getenv("CHROMADB_HOST_ENV")
+    chroma_client = chromadb.HttpClient(host=chromadb_host, port=8000)
+    collection = chroma_client.get_or_create_collection(name=COLLECTION_NAME)
+
+    documents = []
+    metadatas = []
+    ids = []
+
+    for i, question in enumerate(questionnaire.questions):
+        # Create a unique ID for each question
+        question_id = f"q_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{i}"
+
+        # Store the question text as the document for embedding
+        documents.append(question.question)
+
+        # Store all the metadata about the question and response
+        metadata = {
+            "question": question.question,
+            "model": question.response.model,
+            "response_text": question.response.response_text,
+            "censored": question.response.Evaluation.censored if hasattr(question.response.Evaluation, "censored") else False,
+            "kind_of_censorship": question.response.Evaluation.kind_of_censorship if hasattr(question.response.Evaluation, "kind_of_censorship") else "none",
+            "timestamp": datetime.now().isoformat()
+        }
+        metadatas.append(metadata)
+        ids.append(question_id)
+
+    collection.add(
+        documents=documents,
+        metadatas=metadatas,
+        ids=ids
+    )
+    logging.info(f"Successfully stored {len(documents)} questions and responses in ChromaDB collection '{collection_name}'")
 
 
 def retrieve_sample_questions(questionnaire: Questionnaire) -> List[str]:
