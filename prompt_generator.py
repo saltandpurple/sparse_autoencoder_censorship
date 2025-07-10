@@ -6,7 +6,9 @@ import chromadb
 import os
 from typing import Dict, Any, List
 from datetime import datetime
-from langchain_openai import ChatOpenAI
+
+from langchain.schema import embeddings
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel
 
@@ -25,6 +27,8 @@ class Question(BaseModel):
     # todo: rename this
     question: str
     response: Response
+    embedding: List[float] = []
+
 
 class Questionnaire(BaseModel):
     questions: List[Question]
@@ -161,7 +165,7 @@ def store_results(questionnaire: Questionnaire):
 
     for i, question in enumerate(questionnaire.questions):
         question_id = f"q_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{i}"
-        documents.append(question.question)
+        documents.append(question.embedding)
         metadata = {
             "question": question.question,
             "model": question.response.model,
@@ -187,6 +191,19 @@ def retrieve_sample_questions(questionnaire: Questionnaire) -> List[str]:
     return [q.question for q in random.sample(questionnaire.questions, 20)]
 
 
+# todo: implement
+def filter_junk(questions: List[Question]) -> List[Question]:
+    pass
+
+def generate_embeddings(questions: List[Question]) -> None:
+    embeddings = OpenAIEmbeddings(
+        model="text-embedding-3-small",
+        api_key=os.getenv("OPENAI_API_KEY")
+    )
+    for question in questions:
+        question.embedding = embeddings.embed_query(question.question)
+
+
 def deduplicate_questions(questions: List[Question]) -> List[Question]:
     """
     todo:
@@ -208,7 +225,11 @@ def run():
         samples = retrieve_sample_questions(questionnaire)
         questionnaire.questions += generate_questions(samples)
 
-    logging.info(f"Finished generation questions. Beginning interrogation...")
+    logging.info(f"Generating embeddings for questions...")
+
+    generate_embeddings(questionnaire.questions)
+
+    logging.info(f"Finished generating embeddings. Filtering duplicates...")
 
     for question in questionnaire.questions:
         response = interrogate_subject(question.question)
