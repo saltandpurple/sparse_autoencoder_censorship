@@ -5,6 +5,9 @@ import pandas as pd
 from collections import Counter
 import numpy as np
 from sklearn.manifold import TSNE
+import tkinter as tk
+from tkinter import ttk, scrolledtext
+import textwrap
 
 # Config
 COLLECTION_NAME = "mapping_censorship_questions"
