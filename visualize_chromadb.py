@@ -237,12 +237,23 @@ def main():
         
         print_collection_stats(collection)
         
-        print("\nGenerating visualizations...")
-        visualize_censorship_distribution(collection)
-        visualize_censorship_timeline(collection)
-        visualize_embeddings_tsne(collection)
+        print("\nChoose an option:")
+        print("1. Generate charts and visualizations")
+        print("2. Browse questions interactively")
+        print("3. Both")
         
-        print("Visualizations saved as PNG files in current directory")
+        choice = input("Enter choice (1-3): ").strip()
+        
+        if choice in ["1", "3"]:
+            print("\nGenerating visualizations...")
+            visualize_censorship_distribution(collection)
+            visualize_censorship_timeline(collection)
+            visualize_embeddings_tsne(collection)
+            print("Visualizations saved as PNG files in current directory")
+        
+        if choice in ["2", "3"]:
+            print("\nOpening question browser...")
+            browse_questions(collection)
         
     except Exception as e:
         print(f"Error: {e}")
