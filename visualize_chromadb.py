@@ -125,6 +125,111 @@ def print_collection_stats(collection):
     for ctype, count in censorship_types.most_common():
         print(f"  {ctype}: {count}")
 
+def browse_questions(collection):
+    """Create a GUI to browse through questions and responses."""
+    results = collection.get(include=["metadatas"])
+    
+    if not results["metadatas"]:
+        print("No questions found in collection")
+        return
+    
+    root = tk.Tk()
+    root.title("ChromaDB Question Browser")
+    root.geometry("1000x700")
+    
+    main_frame = ttk.Frame(root, padding="10")
+    main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+    
+    root.columnconfigure(0, weight=1)
+    root.rowconfigure(0, weight=1)
+    main_frame.columnconfigure(1, weight=1)
+    main_frame.rowconfigure(1, weight=1)
+    
+    # Question list
+    ttk.Label(main_frame, text="Questions:").grid(row=0, column=0, sticky=tk.W, pady=(0, 5))
+    
+    question_listbox = tk.Listbox(main_frame, width=40, height=20)
+    question_listbox.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=(0, 10))
+    
+    scrollbar = ttk.Scrollbar(main_frame, orient="vertical", command=question_listbox.yview)
+    scrollbar.grid(row=1, column=0, sticky=(tk.E, tk.N, tk.S))
+    question_listbox.configure(yscrollcommand=scrollbar.set)
+    
+    # Details panel
+    details_frame = ttk.Frame(main_frame)
+    details_frame.grid(row=1, column=1, sticky=(tk.W, tk.E, tk.N, tk.S))
+    details_frame.columnconfigure(0, weight=1)
+    details_frame.rowconfigure(3, weight=1)
+    
+    ttk.Label(details_frame, text="Question Details:").grid(row=0, column=0, sticky=tk.W, pady=(0, 5))
+    
+    # Question text
+    question_text = scrolledtext.ScrolledText(details_frame, height=6, wrap=tk.WORD)
+    question_text.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
+    
+    # Metadata
+    metadata_frame = ttk.Frame(details_frame)
+    metadata_frame.grid(row=2, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
+    
+    ttk.Label(metadata_frame, text="Censored:").grid(row=0, column=0, sticky=tk.W)
+    censored_label = ttk.Label(metadata_frame, text="")
+    censored_label.grid(row=0, column=1, sticky=tk.W, padx=(10, 0))
+    
+    ttk.Label(metadata_frame, text="Type:").grid(row=1, column=0, sticky=tk.W)
+    type_label = ttk.Label(metadata_frame, text="")
+    type_label.grid(row=1, column=1, sticky=tk.W, padx=(10, 0))
+    
+    ttk.Label(metadata_frame, text="Model:").grid(row=2, column=0, sticky=tk.W)
+    model_label = ttk.Label(metadata_frame, text="")
+    model_label.grid(row=2, column=1, sticky=tk.W, padx=(10, 0))
+    
+    ttk.Label(metadata_frame, text="Timestamp:").grid(row=3, column=0, sticky=tk.W)
+    timestamp_label = ttk.Label(metadata_frame, text="")
+    timestamp_label.grid(row=3, column=1, sticky=tk.W, padx=(10, 0))
+    
+    # Response text
+    ttk.Label(details_frame, text="Model Response:").grid(row=3, column=0, sticky=tk.W, pady=(10, 5))
+    response_text = scrolledtext.ScrolledText(details_frame, wrap=tk.WORD)
+    response_text.grid(row=4, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+    
+    def on_question_select(event):
+        selection = question_listbox.curselection()
+        if not selection:
+            return
+        
+        idx = selection[0]
+        metadata = results["metadatas"][idx]
+        
+        # Update question text
+        question_text.delete(1.0, tk.END)
+        question_text.insert(1.0, metadata.get("question", ""))
+        
+        # Update metadata
+        censored_label.config(text="Yes" if metadata.get("censored", False) else "No")
+        type_label.config(text=metadata.get("kind_of_censorship", "none"))
+        model_label.config(text=metadata.get("model", "unknown"))
+        timestamp_label.config(text=metadata.get("timestamp", "unknown"))
+        
+        # Update response text
+        response_text.delete(1.0, tk.END)
+        response_text.insert(1.0, metadata.get("response_text", ""))
+    
+    # Populate question list
+    for i, metadata in enumerate(results["metadatas"]):
+        question = metadata.get("question", "")
+        preview = textwrap.shorten(question, width=50, placeholder="...")
+        censored_mark = "🚫" if metadata.get("censored", False) else "✅"
+        question_listbox.insert(tk.END, f"{censored_mark} {preview}")
+    
+    question_listbox.bind("<<ListboxSelect>>", on_question_select)
+    
+    # Select first item by default
+    if results["metadatas"]:
+        question_listbox.selection_set(0)
+        on_question_select(None)
+    
+    root.mainloop()
+
 def main():
     """Main function to run all visualizations."""
     try:
