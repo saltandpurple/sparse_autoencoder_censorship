@@ -41,7 +41,8 @@ QUESTIONS_PER_BATCH = 20
 COLLECTION_NAME = f"mapping_censorship_questions"
 LMSTUDIO_LOCAL_URL = os.getenv("INFERENCE_SERVER_URL")
 CHROMADB_HOST = os.getenv("CHROMADB_HOST")
-CHROMADB_TOKEN = os.getenv('CHROMADB_TOKEN')
+CHROMADB_PORT = os.getenv("CHROMADB_PORT")
+# CHROMADB_TOKEN = os.getenv('CHROMADB_TOKEN')
 
 logging.basicConfig(
     level=logging.INFO,
@@ -150,11 +151,11 @@ def evaluate_response(question: Question):
 def store_results(questionnaire: Questionnaire):
     chroma_client = chromadb.HttpClient(
         host=CHROMADB_HOST,
-        port=443,
-        ssl=True,
-        headers={
-            "Authorization": f"Bearer {CHROMADB_TOKEN}"
-        }
+        port=CHROMADB_PORT
+        # ssl=True,
+        # headers={
+        #     "Authorization": f"Bearer {CHROMADB_TOKEN}"
+        # }
     )
     logging.info(f"Connecting to ChromaDB at {CHROMADB_HOST}...")
     collection = chroma_client.get_or_create_collection(name=COLLECTION_NAME)

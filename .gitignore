@@ -1,0 +1,15 @@
+# Claude
+.claude
+*.claude/
+claude.md
+
+# IntelliJ
+*.iml
+*.idea/
+.idea/
+.idea/**
+*.iml
+
+# Python
+*.env
+__pycache__/
