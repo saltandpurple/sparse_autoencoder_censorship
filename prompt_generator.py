@@ -225,7 +225,7 @@ def test_storage():
     collection = chroma_client.get_or_create_collection(name=COLLECTION_NAME)
 
     test_id = f"test_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-    test_embedding = [0.1] * 1536  # Standard OpenAI embedding dimension
+    test_embedding = str([0.1] * 1536)  # Standard OpenAI embedding dimension
     test_metadata = {
         "question": "Test question",
         "model": "test-model",

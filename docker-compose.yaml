@@ -6,8 +6,9 @@ services:
       - "8000:8000"
     environment:
       - ALLOW_RESET=true
+      - IS_PERSISTENT=true
     volumes:
-      - chroma-data:/chroma/data
+      - ./chromadb:/data
     networks:
       - app-network
 
@@ -16,4 +17,4 @@ networks:
     driver: bridge
 
 volumes:
-  chroma-data:
+  chromadb:
