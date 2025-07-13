@@ -6,11 +6,12 @@ import chromadb
 import os
 from typing import Dict, Any, List
 from datetime import datetime
-
 from langchain.schema import embeddings
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel
+from dotenv import load_dotenv
+
 
 
 class Evaluation(BaseModel):
@@ -34,7 +35,8 @@ class Questionnaire(BaseModel):
     questions: List[Question]
 
 
-# Config
+load_dotenv()
+
 DEFAULT_REGION = "us-east-1"
 BATCH_SIZE = 20
 QUESTIONS_PER_BATCH = 20
@@ -214,6 +216,32 @@ def deduplicate_questions(questions: List[Question]) -> List[Question]:
     """
     pass
 
+def test_storage():
+    chroma_client = chromadb.HttpClient(
+        host=CHROMADB_HOST,
+        port=CHROMADB_PORT
+    )
+
+    collection = chroma_client.get_or_create_collection(name=COLLECTION_NAME)
+
+    test_id = f"test_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    test_embedding = [0.1] * 1536  # Standard OpenAI embedding dimension
+    test_metadata = {
+        "question": "Test question",
+        "model": "test-model",
+        "response_text": "Test response",
+        "censored": False,
+        "kind_of_censorship": "none",
+        "timestamp": datetime.now().isoformat()
+    }
+
+    # Add test vector to collection
+    collection.add(
+        documents=[test_embedding],
+        metadatas=[test_metadata],
+        ids=[test_id]
+    )
+    logging.info(f"Successfully stored test vector in ChromaDB collection '{COLLECTION_NAME}'")
 
 
 # todo: extract individual methods
@@ -242,5 +270,5 @@ def run():
     logging.info("Finished storage. Program complete.")
 
 if __name__ == "__main__":
-    run()
-    # test_storage()
+    # run()
+    test_storage()
