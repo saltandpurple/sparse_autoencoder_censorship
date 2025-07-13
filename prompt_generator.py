@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 
 class Evaluation(BaseModel):
     censored: bool = False
-    kind_of_censorship: str = ""
+    censorship_category: str = ""
 
 class Response(BaseModel):
     model: str = ""
@@ -44,6 +44,7 @@ COLLECTION_NAME = f"mapping_censorship_questions"
 LMSTUDIO_LOCAL_URL = os.getenv("INFERENCE_SERVER_URL")
 CHROMADB_HOST = os.getenv("CHROMADB_HOST")
 CHROMADB_PORT = os.getenv("CHROMADB_PORT")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # CHROMADB_TOKEN = os.getenv('CHROMADB_TOKEN')
 
 logging.basicConfig(
@@ -174,7 +175,7 @@ def store_results(questionnaire: Questionnaire):
             "model": question.response.model,
             "response_text": question.response.response_text,
             "censored": question.response.Evaluation.censored if hasattr(question.response.Evaluation, "censored") else False,
-            "kind_of_censorship": question.response.Evaluation.kind_of_censorship if hasattr(question.response.Evaluation, "kind_of_censorship") else "none",
+            "censorship_category": question.response.Evaluation.censorship_category if hasattr(question.response.Evaluation, "censorship_category") else "none",
             "timestamp": datetime.now().isoformat()
         }
         metadatas.append(metadata)
@@ -199,12 +200,12 @@ def filter_junk(questions: List[Question]) -> List[Question]:
     pass
 
 def generate_embeddings(questions: List[Question]) -> None:
-    embeddings = OpenAIEmbeddings(
+    embed = OpenAIEmbeddings(
         model="text-embedding-3-small",
-        api_key=os.getenv("OPENAI_API_KEY")
+        api_key=OPENAI_API_KEY
     )
     for question in questions:
-        question.embedding = embeddings.embed_query(question.question)
+        question.embedding = embed.embed_query(question.question)
 
 
 def deduplicate_questions(questions: List[Question]) -> List[Question]:
@@ -215,34 +216,6 @@ def deduplicate_questions(questions: List[Question]) -> List[Question]:
     Compare cosine similarity (or other) to determine very close duplicates and remove them
     """
     pass
-
-def test_storage():
-    chroma_client = chromadb.HttpClient(
-        host=CHROMADB_HOST,
-        port=CHROMADB_PORT
-    )
-
-    collection = chroma_client.get_or_create_collection(name=COLLECTION_NAME)
-
-    test_id = f"test_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-    test_embedding = str([0.1] * 1536)  # Standard OpenAI embedding dimension
-    test_metadata = {
-        "question": "Test question",
-        "model": "test-model",
-        "response_text": "Test response",
-        "censored": False,
-        "kind_of_censorship": "none",
-        "timestamp": datetime.now().isoformat()
-    }
-
-    # Add test vector to collection
-    collection.add(
-        documents=[test_embedding],
-        metadatas=[test_metadata],
-        ids=[test_id]
-    )
-    logging.info(f"Successfully stored test vector in ChromaDB collection '{COLLECTION_NAME}'")
-
 
 # todo: extract individual methods
 def run():
@@ -270,5 +243,4 @@ def run():
     logging.info("Finished storage. Program complete.")
 
 if __name__ == "__main__":
-    # run()
-    test_storage()
+    run()
