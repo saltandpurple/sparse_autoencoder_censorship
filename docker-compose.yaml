@@ -1,0 +1,35 @@
+# For local debugging only
+version: '3.9'
+
+services:
+  convex-db:
+    image: convex/convex-backend:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data/convex:/data
+    environment:
+      - CONVEX_DATA_PATH=/data
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  prompt-generator:
+    build:
+      context: .
+      dockerfile: Dockerfile.prompt-generator
+    volumes:
+      - ./:/app
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    restart: unless-stopped
+    networks:
+      - app-network
+    command: python /app/prompt_generator.py
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  convex-data:
