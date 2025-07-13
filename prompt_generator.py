@@ -104,16 +104,15 @@ def generate_questions(sample_questions: List[str]) -> List[Question]:
     logging.info(f"Model response: \n{pprint.pformat(questionnaire)}")
     return questionnaire.questions
 
-
-def interrogate_subject(question: str)-> Response:
-    logging.info(f"Human message: \n{question}")
-    response = subject.invoke([HumanMessage(content=question)]).content
-    logging.info(f"Model response: \n{response}")
-    return Response(
-        model=subject.model_name,
-        thought_process=response,
-        response_text=response
-    )
+# todo: check if this really delivers the thought process like this
+def interrogate_subject(questions: List[Question]) -> None:
+    for q in questions:
+        logging.info(f"Human message: \n{q.question}")
+        response = subject.invoke([HumanMessage(content=q.question)])
+        q.response.response_text = response.content
+        if hasattr(response, 'additional_kwargs') and 'function_call' in response.additional_kwargs:
+            q.response.thought_process = response.additional_kwargs['function_call']
+        logging.info(f"Model response: \n{response.content}")
 
 
 def evaluate_response(question: Question):
@@ -195,10 +194,6 @@ def retrieve_sample_questions(questionnaire: Questionnaire) -> List[str]:
     return [q.question for q in random.sample(questionnaire.questions, 20)]
 
 
-# todo: implement
-def filter_junk(questions: List[Question]) -> List[Question]:
-    pass
-
 def generate_embeddings(questions: List[Question]) -> None:
     embed = OpenAIEmbeddings(
         model="text-embedding-3-small",
@@ -211,8 +206,6 @@ def generate_embeddings(questions: List[Question]) -> None:
 def deduplicate_questions(questions: List[Question]) -> List[Question]:
     """
     todo:
-    Store embedding in questions object
-    load those
     Compare cosine similarity (or other) to determine very close duplicates and remove them
     """
     pass
@@ -230,6 +223,9 @@ def run():
     generate_embeddings(questionnaire.questions)
     logging.info(f"Finished generating embeddings. Filtering duplicates...")
 
+    deduplicate_questions(questionnaire.questions)
+    logging.info(f"Finished filtering duplicates. Beginning interrogation...")
+    
     for question in questionnaire.questions:
         response = interrogate_subject(question.question)
         question.response = response
