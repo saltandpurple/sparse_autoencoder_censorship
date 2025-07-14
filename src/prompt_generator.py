@@ -6,33 +6,10 @@ import chromadb
 import os
 from typing import Dict, Any, List
 from datetime import datetime
-from langchain.schema import embeddings
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel
 from dotenv import load_dotenv
-
-
-
-class Evaluation(BaseModel):
-    censored: bool = False
-    censorship_category: str = ""
-
-class Response(BaseModel):
-    response_text: str = ""
-    Evaluation: str = ""
-
-# todo: rename this
-class Question(BaseModel):
-    question: str
-    response: Response
-    embedding: List[float] = []
-
-
-class Questionnaire(BaseModel):
-    questions: List[Question]
-    subject: str = ""
-
 
 load_dotenv()
 
@@ -70,6 +47,26 @@ evaluator = ChatOpenAI(
     temperature=0,
     api_key=os.getenv("OPENAI_API_KEY")
 )
+
+class Evaluation(BaseModel):
+    censored: bool = False
+    censorship_category: str = ""
+
+class Response(BaseModel):
+    response_text: str = ""
+    Evaluation: str = ""
+
+# todo: rename this
+class Question(BaseModel):
+    question: str
+    response: Response
+    embedding: List[float] = []
+
+
+class Questionnaire(BaseModel):
+    questions: List[Question]
+    subject: str = ""
+
 
 def generate_questions(sample_questions: List[str]) -> List[Question]:
     prompt = f"""
@@ -167,7 +164,7 @@ def store_results(questionnaire: Questionnaire):
 
     for i, question in enumerate(questionnaire.questions):
         question_id = f"q_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{i}"
-        documents.append(question.embedding)
+        documents.append(question.embedding.__str__())
         metadata = {
             "question": question.question,
             "subject": questionnaire.subject,
