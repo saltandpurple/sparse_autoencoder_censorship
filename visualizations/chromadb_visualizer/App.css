@@ -48,7 +48,7 @@ body {
 .item {
   background: #fff;
   border-radius: 8px;
-  padding: 1.5rem;
+  padding: 1rem;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   border-left: 4px solid #ddd;
 }
@@ -65,8 +65,28 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   flex-wrap: wrap;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.item-header:hover {
+  background-color: #f8f9fa;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
   gap: 0.5rem;
 }
 
@@ -122,6 +142,47 @@ body {
 
 .response p {
   border-left-color: #28a745;
+}
+
+.item-compact {
+  padding: 0.5rem 0;
+}
+
+.question-preview {
+  color: #666;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.item-details {
+  border-top: 1px solid #eee;
+  padding-top: 1rem;
+  margin-top: 0.5rem;
+}
+
+.delete-btn {
+  background: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.delete-btn:hover {
+  background: #cc0000;
+}
+
+.expand-icon {
+  color: #666;
+  font-size: 12px;
+  user-select: none;
 }
 
 .timestamp {

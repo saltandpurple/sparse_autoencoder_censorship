@@ -64,6 +64,21 @@ async def get_chromadb_data():
         logger.error(f"Error fetching ChromaDB data: {e}")
         raise HTTPException(status_code=500, detail=f"Error fetching data: {str(e)}")
 
+@app.delete("/api/chromadb/data/{item_id}")
+async def delete_item(item_id: str):
+    try:
+        client = get_chromadb_client()
+        collection = client.get_collection(name=COLLECTION_NAME)
+        
+        collection.delete(ids=[item_id])
+        
+        logger.info(f"Deleted item {item_id} from ChromaDB")
+        return {"message": f"Item {item_id} deleted successfully"}
+        
+    except Exception as e:
+        logger.error(f"Error deleting item {item_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Error deleting item: {str(e)}")
+
 @app.get("/api/chromadb/stats")
 async def get_stats():
     try:
