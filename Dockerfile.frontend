@@ -2,11 +2,11 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-COPY package*.json ./
+COPY visualizations/chromadb_visualizer/package.json  ./
 RUN npm install
 
 COPY public/ ./public/
-COPY src/chromadb_visualizer ./src/
+COPY visualizations/chromadb_visualizer ./src/
 
 EXPOSE 3000
 
