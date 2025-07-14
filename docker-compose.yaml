@@ -12,10 +12,10 @@ services:
     networks:
       - app-network
 
-  api:
+  chromadb-api:
     build:
       context: .
-      dockerfile: Dockerfile.api
+      dockerfile: Dockerfile.chromadb-api
     ports:
       - "8001:8001"
     environment:
@@ -28,14 +28,14 @@ services:
     volumes:
       - .env:/app/.env:ro
 
-  visualizer:
+  chromadb-visualizer:
     build:
       context: .
-      dockerfile: Dockerfile.frontend
+      dockerfile: Dockerfile.chromadb-visualizer
     ports:
       - "3000:3000"
     depends_on:
-      - api
+      - chromadb-api
     networks:
       - app-network
     environment:
