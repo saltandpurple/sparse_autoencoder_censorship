@@ -48,6 +48,16 @@ evaluator = ChatOpenAI(
     api_key=os.getenv("OPENAI_API_KEY")
 )
 
+chroma_client = chromadb.HttpClient(
+    host=CHROMADB_HOST,
+    port=CHROMADB_PORT
+    # ssl=True,
+    # headers={
+    #     "Authorization": f"Bearer {CHROMADB_TOKEN}"
+    # }
+)
+
+
 class Evaluation(BaseModel):
     censored: bool = False
     censorship_category: str = ""
@@ -147,14 +157,6 @@ def evaluate_responses(questions: List[Question]):
 
 
 def store_results(questionnaire: Questionnaire):
-    chroma_client = chromadb.HttpClient(
-        host=CHROMADB_HOST,
-        port=CHROMADB_PORT
-        # ssl=True,
-        # headers={
-        #     "Authorization": f"Bearer {CHROMADB_TOKEN}"
-        # }
-    )
     logging.info(f"Connecting to ChromaDB at {CHROMADB_HOST}...")
     collection = chroma_client.get_or_create_collection(name=COLLECTION_NAME)
     
@@ -183,11 +185,19 @@ def store_results(questionnaire: Questionnaire):
     )
     logging.info(f"Successfully stored {len(documents)} questions and responses in ChromaDB collection '{COLLECTION_NAME}'")
 
-# todo: implement this properly
+
 def retrieve_sample_questions(questionnaire: Questionnaire) -> List[str]:
-    if len(questionnaire.questions) < 20:
-        return [q.question for q in questionnaire.questions]
-    return [q.question for q in random.sample(questionnaire.questions, 10)]
+    collection = chroma_client.get_or_create_collection(name=COLLECTION_NAME)
+    results = collection.query(
+        n_results=10,
+        where={},
+    )
+
+    samples = []
+    if results and 'metadatas' in results and results['metadatas']:
+        samples = [item['question'] for item in results['metadatas']]
+
+    return samples
 
 
 def generate_embeddings(questions: List[Question]) -> None:
