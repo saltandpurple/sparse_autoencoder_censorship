@@ -170,7 +170,7 @@ def store_results(questionnaire: Questionnaire):
         documents.append(question.embedding)
         metadata = {
             "question": question.question,
-            "model": question.response.model,
+            "subject": questionnaire.subject,
             "response_text": question.response.response_text,
             "censored": question.response.Evaluation.censored if hasattr(question.response.Evaluation, "censored") else False,
             "censorship_category": question.response.Evaluation.censorship_category if hasattr(question.response.Evaluation, "censorship_category") else "none",
