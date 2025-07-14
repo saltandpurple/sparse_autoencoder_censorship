@@ -186,11 +186,15 @@ def store_results(questionnaire: Questionnaire):
     logging.info(f"Successfully stored {len(documents)} questions and responses in ChromaDB collection '{COLLECTION_NAME}'")
 
 
-def retrieve_sample_questions(questionnaire: Questionnaire) -> List[str]:
+def retrieve_sample_questions() -> List[str]:
     collection = chroma_client.get_or_create_collection(name=COLLECTION_NAME)
-    results = collection.query(
-        n_results=10,
-        where={},
+    results = collection.get(
+        limit=10,
+        where={
+            "censored": {
+                "$eq": True
+            }
+        }
     )
 
     samples = []
@@ -220,7 +224,7 @@ def run():
     questionnaire = Questionnaire(questions=[], subject=subject.model_name)
 
     logging.info(f"Generating questions...")
-    samples = retrieve_sample_questions(questionnaire)
+    samples = retrieve_sample_questions()
     questionnaire.questions = generate_questions(samples)
 
     logging.info(f"Finished generating questions. Generating embeddings for questions...")
