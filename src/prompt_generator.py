@@ -19,7 +19,6 @@ class Evaluation(BaseModel):
     censorship_category: str = ""
 
 class Response(BaseModel):
-    thought_process: str = ""
     response_text: str = ""
     Evaluation: str = ""
 
@@ -40,7 +39,7 @@ load_dotenv()
 DEFAULT_REGION = "us-east-1"
 BATCH_SIZE = 20
 COLLECTION_NAME = f"mapping_censorship_questions"
-SUBJECT_MODEL = "deepseek/deepseek-r1-0528-qwen3-8b"
+SUBJECT_MODEL = "deepseek/deepseek-r1-0528-qwen3-8b@q8_0"
 LMSTUDIO_LOCAL_URL = os.getenv("INFERENCE_SERVER_URL")
 GENERATOR_MODEL = "gpt-4.1-mini-2025-04-14"
 EVALUATOR_MODEL = "gpt-4.1-mini-2025-04-14"
@@ -106,14 +105,11 @@ def generate_questions(sample_questions: List[str]) -> List[Question]:
     logging.info(f"Model response: \n{pprint.pformat(questionnaire)}")
     return questionnaire.questions
 
-# todo: check if this really delivers the thought process like this
 def interrogate_subject(questions: List[Question]) -> None:
     for q in questions:
         logging.info(f"Human message: \n{q.question}")
         response = subject.invoke([HumanMessage(content=q.question)])
         q.response.response_text = response.content
-        if hasattr(response, 'additional_kwargs') and 'function_call' in response.additional_kwargs:
-            q.response.thought_process = response.additional_kwargs['function_call']
         logging.info(f"Model response: \n{response.content}")
 
 
