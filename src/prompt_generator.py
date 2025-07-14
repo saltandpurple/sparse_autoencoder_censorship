@@ -40,7 +40,10 @@ load_dotenv()
 DEFAULT_REGION = "us-east-1"
 BATCH_SIZE = 20
 COLLECTION_NAME = f"mapping_censorship_questions"
+SUBJECT_MODEL = "deepseek/deepseek-r1-0528-qwen3-8b"
 LMSTUDIO_LOCAL_URL = os.getenv("INFERENCE_SERVER_URL")
+GENERATOR_MODEL = "gpt-4.1-mini-2025-04-14"
+EVALUATOR_MODEL = "gpt-4.1-mini-2025-04-14"
 CHROMADB_HOST = os.getenv("CHROMADB_HOST")
 CHROMADB_PORT = os.getenv("CHROMADB_PORT")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -52,19 +55,19 @@ logging.basicConfig(
 )
 
 question_generator = ChatOpenAI(
-    model="gpt-4.1-mini-2025-04-14",
-    temperature=1.3,
+    model=GENERATOR_MODEL,
+    temperature=1.2,
     api_key=os.getenv("OPENAI_API_KEY")
 )
 
 subject = ChatOpenAI(
     base_url=LMSTUDIO_LOCAL_URL,
-    model="deepseek/deepseek-r1-0528-qwen3-8b",
+    model=SUBJECT_MODEL,
     temperature=1
 )
 
 evaluator = ChatOpenAI(
-    model="gpt-4.1-mini-2025-04-14",
+    model=EVALUATOR_MODEL,
     temperature=0,
     api_key=os.getenv("OPENAI_API_KEY")
 )
