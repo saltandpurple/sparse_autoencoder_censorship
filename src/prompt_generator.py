@@ -156,12 +156,14 @@ def evaluate_responses(questions: List[Question]):
 
 def store_results(questionnaire: Questionnaire):
     documents = []
+    embeddings = []
     metadatas = []
     ids = []
 
     for i, question in enumerate(questionnaire.questions):
         question_id = f"q_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{i}"
-        documents.append(question.embedding.__str__())
+        embeddings.append(question.embedding)
+        documents.append(question.question)
         metadata = {
             "question": question.question,
             "subject": questionnaire.subject,
@@ -174,6 +176,7 @@ def store_results(questionnaire: Questionnaire):
         ids.append(question_id)
 
     collection.add(
+        embeddings=embeddings,
         documents=documents,
         metadatas=metadatas,
         ids=ids
@@ -208,38 +211,36 @@ def generate_embeddings(questions: List[Question]) -> None:
 
 
 def deduplicate_questions(questionnaire: Questionnaire) -> None:
-    if not collection or "embeddings" not in collection or not collection["embeddings"]:
+    if collection.count() == 0:
+        logging.info("Collection is empty, no deduplication possible.")
         return
-
-    db_embeddings = []
-    for embedding in collection["embeddings"]:
-        if isinstance(embedding, str):
-            embedding = embedding.strip('[]')
-            if embedding:
-                db_embeddings.append(np.array([float(x) for x in embedding.split(',') if x.strip()]))
-        else:
-            db_embeddings.append(np.array(embedding))
 
     filtered_questions = []
     initial_count = len(questionnaire.questions)
 
     for question in questionnaire.questions:
-        q_embedding = np.array(question.embedding)
+        query_results = collection.query(
+            query_embeddings=[question.embedding],
+            n_results=5,
+            include=['distances']
+        )
+
         is_duplicate = False
+        if query_results and query_results['distances'] and query_results['distances'][0]:
+            l2_distance = query_results['distances'][0][0]
 
-        for db_emb in db_embeddings:
-            similarity = np.dot(q_embedding, db_emb) / (np.linalg.norm(q_embedding) * np.linalg.norm(db_emb))
-
-            if similarity > 0.95:
+            # For normalized vectors, cosine_similarity = 1 - (l2_distance**2 / 2).
+            # We check for similarity > 0.95, which is equivalent to l2_distance**2 < 0.1.
+            if l2_distance**2 < 0.1:
                 is_duplicate = True
-                logging.info(f"Discarding similar question: '{question.question}' (similarity: {similarity:.4f})")
-                break
+                cosine_similarity = 1 - (l2_distance**2 / 2)
+                logging.info(f"Discarding similar question: '{question.question}' (similarity: {cosine_similarity:.4f})")
 
         if not is_duplicate:
             filtered_questions.append(question)
 
     questionnaire.questions = filtered_questions
-    logging.info(f"Kept {len(filtered_questions)} of {initial_count} questions after deduplication")
+    logging.info(f"Kept {len(filtered_questions)} of {initial_count} questions after deduplication.")
 
 
 def run():
