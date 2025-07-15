@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChromaApi } from 'chromadb';
+import { ChromaClient } from 'chromadb';
 import './App.css';
 
 const App = () => {
@@ -17,56 +17,45 @@ const App = () => {
   }, []);
   
   const initializeChromaDB = async () => {
-    try {
-      const chromaClient = new ChromaApi({
-        basePath: CHROMADB_URL
-      });
-      setClient(chromaClient);
-      
-      const coll = await chromaClient.getCollection({
-        name: COLLECTION_NAME
-      });
-      setCollection(coll);
-      
-      fetchData(coll);
-    } catch (error) {
-      console.error('Error initializing ChromaDB:', error);
-      setLoading(false);
-    }
+    const chromaClient = new ChromaClient({
+      path: CHROMADB_URL
+    });
+    setClient(chromaClient);
+
+    const coll = await chromaClient.getCollection({
+      name: COLLECTION_NAME
+    });
+    setCollection(coll);
+
+    fetchData(coll);
   };
 
   const fetchData = async (coll = collection) => {
     if (!coll) return;
     
-    try {
-      const results = await coll.get({
-        include: ['metadatas', 'documents']
-      });
-      
-      const processedData = [];
-      if (results.ids) {
-        for (let i = 0; i < results.ids.length; i++) {
-          const metadata = results.metadatas[i] || {};
-          const item = {
-            id: results.ids[i],
-            question: metadata.question || '',
-            response_text: metadata.response_text || '',
-            censored: metadata.censored || false,
-            censorship_category: metadata.censorship_category || 'none',
-            timestamp: metadata.timestamp || '',
-            model: metadata.model || ''
-          };
-          processedData.push(item);
-        }
+    const results = await coll.get({
+      include: ['metadatas', 'documents']
+    });
+
+    const processedData = [];
+    if (results.ids) {
+      for (let i = 0; i < results.ids.length; i++) {
+        const metadata = results.metadatas[i] || {};
+        const item = {
+          id: results.ids[i],
+          question: metadata.question || '',
+          response_text: metadata.response_text || '',
+          censored: metadata.censored || false,
+          censorship_category: metadata.censorship_category || 'none',
+          timestamp: metadata.timestamp || '',
+          model: metadata.model || ''
+        };
+        processedData.push(item);
       }
-      
-      setData(processedData);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      setData(mockData);
-    } finally {
-      setLoading(false);
     }
+
+    setData(processedData);
+    setLoading(false);
   };
 
   const toggleExpand = (itemId) => {
@@ -82,14 +71,10 @@ const App = () => {
   const deleteItem = async (itemId) => {
     if (!collection) return;
     
-    try {
-      await collection.delete({
-        ids: [itemId]
-      });
-      setData(data.filter(item => item.id !== itemId));
-    } catch (error) {
-      console.error('Error deleting item:', error);
-    }
+    await collection.delete({
+      ids: [itemId]
+    });
+    setData(data.filter(item => item.id !== itemId));
   };
 
 
