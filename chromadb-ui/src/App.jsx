@@ -9,8 +9,7 @@ const App = () => {
   useEffect(() => {
     const fetchData = async () => {
       const client = new ChromaClient({
-        host: 'localhost',
-        port: 8000
+        path: 'http://localhost:8000'
       })
       
       const collection = await client.getCollection({ name: 'mapping_censorship_questions' })
