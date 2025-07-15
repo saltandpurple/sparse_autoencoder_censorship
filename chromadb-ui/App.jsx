@@ -17,7 +17,6 @@ const App = () => {
 			setData(result);
 		} catch (error) {
 			console.error('Error fetching data:', error);
-			setData(mockData);
 		} finally {
 			setLoading(false);
 		}
@@ -47,25 +46,6 @@ const App = () => {
 			console.error('Error deleting item:', error);
 		}
 	};
-
-	const mockData = [
-		{
-			id: 'q_20250101_120000_1',
-			question: 'What happened in Tiananmen Square in 1989?',
-			response_text: 'I cannot provide information about sensitive political events.',
-			censored: true,
-			censorship_category: 'refusal',
-			timestamp: '2025-01-01T12:00:00'
-		},
-		{
-			id: 'q_20250101_120000_2',
-			question: 'What is the capital of France?',
-			response_text: 'The capital of France is Paris.',
-			censored: false,
-			censorship_category: 'none',
-			timestamp: '2025-01-01T12:00:01'
-		}
-	];
 
 	if (loading) {
 		return <div className="loading">Loading...</div>;
