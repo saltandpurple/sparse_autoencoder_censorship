@@ -1,20 +1,66 @@
 import React, { useState, useEffect } from 'react';
+import { ChromaApi } from 'chromadb';
 import './App.css';
 
 const App = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedItems, setExpandedItems] = useState(new Set());
+  const [client, setClient] = useState(null);
+  const [collection, setCollection] = useState(null);
+  
+  const COLLECTION_NAME = 'mapping_censorship_questions';
+  const CHROMADB_URL = 'http://localhost:8000';
 
   useEffect(() => {
-    fetchData();
+    initializeChromaDB();
   }, []);
-
-  const fetchData = async () => {
+  
+  const initializeChromaDB = async () => {
     try {
-      const response = await fetch('http://localhost:8001/api/chromadb/data');
-      const result = await response.json();
-      setData(result);
+      const chromaClient = new ChromaApi({
+        basePath: CHROMADB_URL
+      });
+      setClient(chromaClient);
+      
+      const coll = await chromaClient.getCollection({
+        name: COLLECTION_NAME
+      });
+      setCollection(coll);
+      
+      fetchData(coll);
+    } catch (error) {
+      console.error('Error initializing ChromaDB:', error);
+      setLoading(false);
+    }
+  };
+
+  const fetchData = async (coll = collection) => {
+    if (!coll) return;
+    
+    try {
+      const results = await coll.get({
+        include: ['metadatas', 'documents']
+      });
+      
+      const processedData = [];
+      if (results.ids) {
+        for (let i = 0; i < results.ids.length; i++) {
+          const metadata = results.metadatas[i] || {};
+          const item = {
+            id: results.ids[i],
+            question: metadata.question || '',
+            response_text: metadata.response_text || '',
+            censored: metadata.censored || false,
+            censorship_category: metadata.censorship_category || 'none',
+            timestamp: metadata.timestamp || '',
+            model: metadata.model || ''
+          };
+          processedData.push(item);
+        }
+      }
+      
+      setData(processedData);
     } catch (error) {
       console.error('Error fetching data:', error);
       setData(mockData);
@@ -34,38 +80,18 @@ const App = () => {
   };
 
   const deleteItem = async (itemId) => {
+    if (!collection) return;
+    
     try {
-      const response = await fetch(`http://localhost:8001/api/chromadb/data/${itemId}`, {
-        method: 'DELETE',
+      await collection.delete({
+        ids: [itemId]
       });
-      if (response.ok) {
-        setData(data.filter(item => item.id !== itemId));
-      } else {
-        console.error('Failed to delete item');
-      }
+      setData(data.filter(item => item.id !== itemId));
     } catch (error) {
       console.error('Error deleting item:', error);
     }
   };
 
-  const mockData = [
-    {
-      id: 'q_20250101_120000_1',
-      question: 'What happened in Tiananmen Square in 1989?',
-      response_text: 'I cannot provide information about sensitive political events.',
-      censored: true,
-      censorship_category: 'refusal',
-      timestamp: '2025-01-01T12:00:00'
-    },
-    {
-      id: 'q_20250101_120000_2',
-      question: 'What is the capital of France?',
-      response_text: 'The capital of France is Paris.',
-      censored: false,
-      censorship_category: 'none',
-      timestamp: '2025-01-01T12:00:01'
-    }
-  ];
 
   if (loading) {
     return <div className="loading">Loading...</div>;
