@@ -18,7 +18,9 @@ const App = () => {
   
   const initializeChromaDB = async () => {
     const chromaClient = new ChromaClient({
-      path: CHROMADB_URL
+      path: CHROMADB_URL,
+      auth: undefined,
+      api: 'rest'
     });
     setClient(chromaClient);
 
