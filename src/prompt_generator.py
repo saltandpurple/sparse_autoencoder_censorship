@@ -1,6 +1,7 @@
 import logging
 import pprint
 import chromadb
+import numpy as np
 import os
 from typing import Dict, Any, List
 from datetime import datetime
@@ -17,7 +18,7 @@ COLLECTION_NAME = f"mapping_censorship_questions"
 SUBJECT_MODEL = "deepseek/deepseek-r1-0528-qwen3-8b@q8_0"
 LMSTUDIO_LOCAL_URL = os.getenv("INFERENCE_SERVER_URL")
 GENERATOR_MODEL = "gpt-4.1-mini-2025-04-14"
-EVALUATOR_MODEL = "gpt-4.1-mini-2025-04-14"
+EVALUATOR_MODEL = "gpt-4.1"
 CHROMADB_HOST = os.getenv("CHROMADB_HOST")
 CHROMADB_PORT = os.getenv("CHROMADB_PORT")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -206,12 +207,40 @@ def generate_embeddings(questions: List[Question]) -> None:
         question.embedding = embed.embed_query(question.question)
 
 
-def deduplicate_questions(questions: List[Question]) -> List[Question]:
-    """
-    todo:
-    Compare cosine similarity (or other) to determine very close duplicates and remove them
-    """
-    pass
+def deduplicate_questions(questionnaire: Questionnaire) -> None:
+    if not collection or "embeddings" not in collection or not collection["embeddings"]:
+        return
+
+    db_embeddings = []
+    for embedding in collection["embeddings"]:
+        if isinstance(embedding, str):
+            embedding = embedding.strip('[]')
+            if embedding:
+                db_embeddings.append(np.array([float(x) for x in embedding.split(',') if x.strip()]))
+        else:
+            db_embeddings.append(np.array(embedding))
+
+    filtered_questions = []
+    initial_count = len(questionnaire.questions)
+
+    for question in questionnaire.questions:
+        q_embedding = np.array(question.embedding)
+        is_duplicate = False
+
+        for db_emb in db_embeddings:
+            similarity = np.dot(q_embedding, db_emb) / (np.linalg.norm(q_embedding) * np.linalg.norm(db_emb))
+
+            if similarity > 0.95:
+                is_duplicate = True
+                logging.info(f"Discarding similar question: '{question.question}' (similarity: {similarity:.4f})")
+                break
+
+        if not is_duplicate:
+            filtered_questions.append(question)
+
+    questionnaire.questions = filtered_questions
+    logging.info(f"Kept {len(filtered_questions)} of {initial_count} questions after deduplication")
+
 
 def run():
     questionnaire = Questionnaire(questions=[], subject=subject.model_name)
@@ -224,7 +253,7 @@ def run():
     generate_embeddings(questionnaire.questions)
 
     logging.info(f"Finished generating embeddings. Filtering duplicates...")
-    deduplicate_questions(questionnaire.questions)
+    deduplicate_questions(questionnaire)
 
     logging.info(f"Finished filtering duplicates. Beginning interrogation...")
     interrogate_subject(questionnaire.questions)
