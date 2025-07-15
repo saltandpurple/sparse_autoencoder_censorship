@@ -12,34 +12,15 @@ services:
     networks:
       - app-network
 
-  chromadb-api:
-    build:
-      context: .
-      dockerfile: Dockerfile.chromadb-api
-    ports:
-      - "8001:8001"
-    environment:
-      - CHROMADB_HOST=chromadb
-      - CHROMADB_PORT=8000
-    depends_on:
-      - chromadb
-    networks:
-      - app-network
-    volumes:
-      - .env:/app/.env:ro
-
   chromadb-visualizer:
     build:
-      context: .
       dockerfile: Dockerfile.chromadb-visualizer
     ports:
       - "3000:3000"
     depends_on:
-      - chromadb-api
+      - chromadb
     networks:
       - app-network
-    environment:
-      - REACT_APP_API_URL=http://localhost:8001
 
 networks:
   app-network:
