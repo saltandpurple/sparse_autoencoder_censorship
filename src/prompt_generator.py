@@ -221,7 +221,7 @@ def deduplicate_questions(questionnaire: Questionnaire) -> None:
     for question in questionnaire.questions:
         query_results = collection.query(
             query_embeddings=[question.embedding],
-            n_results=5,
+            n_results=1,
             include=['distances']
         )
 
