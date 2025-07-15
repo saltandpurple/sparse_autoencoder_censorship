@@ -13,9 +13,9 @@ services:
     networks:
       - app-network
 
-  chromadb-visualizer:
+  chromadb-ui:
     build:
-      dockerfile: Dockerfile.chromadb-visualizer
+      dockerfile: chromadb-ui/Dockerfile.chromadb-ui
     ports:
       - "3000:3000"
     depends_on:
