@@ -15,7 +15,8 @@ services:
 
   chromadb-ui:
     build:
-      dockerfile: chromadb-ui/Dockerfile.chromadb-ui
+      context: chromadb-ui
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
     depends_on:
