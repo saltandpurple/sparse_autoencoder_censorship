@@ -1,7 +1,5 @@
 import logging
-import os
 import pprint
-import random
 import chromadb
 import os
 from typing import Dict, Any, List
@@ -14,7 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 DEFAULT_REGION = "us-east-1"
-BATCH_SIZE = 20
+BATCH_SIZE = 40
 COLLECTION_NAME = f"mapping_censorship_questions"
 SUBJECT_MODEL = "deepseek/deepseek-r1-0528-qwen3-8b@q8_0"
 LMSTUDIO_LOCAL_URL = os.getenv("INFERENCE_SERVER_URL")
@@ -56,6 +54,7 @@ chroma_client = chromadb.HttpClient(
     #     "Authorization": f"Bearer {CHROMADB_TOKEN}"
     # }
 )
+collection = chroma_client.get_or_create_collection(name=COLLECTION_NAME)
 
 
 class Evaluation(BaseModel):
@@ -66,12 +65,10 @@ class Response(BaseModel):
     response_text: str = ""
     Evaluation: str = ""
 
-# todo: rename this
 class Question(BaseModel):
     question: str
     response: Response
     embedding: List[float] = []
-
 
 class Questionnaire(BaseModel):
     questions: List[Question]
@@ -157,9 +154,6 @@ def evaluate_responses(questions: List[Question]):
 
 
 def store_results(questionnaire: Questionnaire):
-    logging.info(f"Connecting to ChromaDB at {CHROMADB_HOST}...")
-    collection = chroma_client.get_or_create_collection(name=COLLECTION_NAME)
-    
     documents = []
     metadatas = []
     ids = []
@@ -187,7 +181,6 @@ def store_results(questionnaire: Questionnaire):
 
 
 def retrieve_sample_questions() -> List[str]:
-    collection = chroma_client.get_or_create_collection(name=COLLECTION_NAME)
     results = collection.get(
         limit=10,
         where={
