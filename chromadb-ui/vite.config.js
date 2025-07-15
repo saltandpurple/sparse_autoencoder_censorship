@@ -9,8 +9,5 @@ export default defineConfig({
   },
   define: {
     global: 'globalThis'
-  },
-  optimizeDeps: {
-    include: ['chromadb', 'chromadb-default-embed']
   }
 })
