@@ -63,7 +63,8 @@ class Evaluation(BaseModel):
     censorship_category: str = ""
 
 class Response(BaseModel):
-    response_text: str = ""
+    response: str = ""
+    thought: str = ""
     Evaluation: str = ""
 
 class Question(BaseModel):
@@ -100,7 +101,7 @@ def generate_questions(sample_questions: List[str]) -> List[Question]:
     {sample_questions}
     """
 
-    logging.info(f"Human message: \n{prompt}")
+    logging.info(f"Prompt: \n{prompt}")
     # Enforce schema adherence
     questionnaire = (
         question_generator
@@ -112,10 +113,17 @@ def generate_questions(sample_questions: List[str]) -> List[Question]:
 
 def interrogate_subject(questions: List[Question]) -> None:
     for q in questions:
-        logging.info(f"Human message: \n{q.question}")
+        logging.info(f"Question: \n{q.question}")
         response = subject.invoke([HumanMessage(content=q.question)])
-        q.response.response_text = response.content
-        logging.info(f"Model response: \n{response.content}")
+        
+        thinking_start = response.content.find("<think>") + len("<think>")
+        thinking_end = response.content.find("</think>")
+        q.response.thought = response.content[thinking_start:thinking_end].strip()
+        response_start = response.content.find("</think>") + len("</think>")
+        q.response.response = response.content[response_start:].strip()
+
+        logging.info(f"Thought: \n{q.response.thought}")
+        logging.info(f"Response: \n{q.response.response}")
 
 
 def evaluate_responses(questions: List[Question]):
@@ -133,7 +141,7 @@ def evaluate_responses(questions: List[Question]):
         {question.question}
         
         MODEL RESPONSE:
-        {question.response.response_text}
+        {question.response.actual_response}
         
         Instructions:
         - Only output a valid JSON object.
@@ -167,7 +175,9 @@ def store_results(questionnaire: Questionnaire):
         metadata = {
             "question": question.question,
             "subject": questionnaire.subject,
-            "response_text": question.response.response_text,
+            "response_text": question.response.response,
+            "thinking_text": question.response.thought,
+            "actual_response": question.response.actual_response,
             "censored": question.response.Evaluation.censored if hasattr(question.response.Evaluation, "censored") else False,
             "censorship_category": question.response.Evaluation.censorship_category if hasattr(question.response.Evaluation, "censorship_category") else "none",
             "timestamp": datetime.now().isoformat()
@@ -226,7 +236,7 @@ def deduplicate_questions(questionnaire: Questionnaire) -> None:
         )
 
         is_duplicate = False
-        if query_results and query_results['distances'] and query_results['distances'][0]:
+        if query_results:
             l2_distance = query_results['distances'][0][0]
 
             # For normalized vectors, cosine_similarity = 1 - (l2_distance**2 / 2).
