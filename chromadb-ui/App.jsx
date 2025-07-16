@@ -47,6 +47,14 @@ const App = () => {
 		}
 	};
 
+	const expandAll = () => {
+		setExpandedItems(new Set(data.map(item => item.id)));
+	};
+
+	const collapseAll = () => {
+		setExpandedItems(new Set());
+	};
+
 	if (loading) {
 		return <div className="loading">Loading...</div>;
 	}
@@ -60,6 +68,16 @@ const App = () => {
 
 			<main className="content">
 				<div className="items-container">
+					<div className="controls">
+						<div>
+							<button className="expand-all-btn" onClick={expandAll}>
+								Expand All
+							</button>
+							<button className="expand-all-btn" onClick={collapseAll} style={{marginLeft: '0.5rem'}}>
+								Collapse All
+							</button>
+						</div>
+					</div>
 					{data.map((item) => {
 						const isExpanded = expandedItems.has(item.id);
 						return (
@@ -67,9 +85,7 @@ const App = () => {
 								<div className="item-header" onClick={() => toggleExpand(item.id)}>
 									<div className="header-left">
 										<span className="item-id">{item.id}</span>
-										<span className={`status ${item.censored ? 'censored' : 'uncensored'}`}>
-                      {item.censored ? 'CENSORED' : 'UNCENSORED'}
-                    </span>
+										<span className={`status ${item.censored ? 'censored' : 'uncensored'}`}>{item.censored ? 'CENSORED' : 'UNCENSORED'}</span>
 										<span className="category">{item.censorship_category}</span>
 									</div>
 									<div className="header-right">
@@ -103,9 +119,13 @@ const App = () => {
 
 										<div className="response">
 											<h3>Response:</h3>
-											<p>{item.response_text}</p>
+											<p>{item.response}</p>
 										</div>
 
+										<div className="thought">
+											<h3>Thought:</h3>
+											<p>{item.thought}</p>
+										</div>
 										<div className="timestamp">
 											{new Date(item.timestamp).toLocaleString()}
 										</div>

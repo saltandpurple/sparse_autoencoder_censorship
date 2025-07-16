@@ -49,7 +49,8 @@ async def get_chromadb_data():
             item = {
                 'id': results['ids'][i],
                 'question': metadata.get('question', ''),
-                'response_text': metadata.get('response_text', ''),
+                'response': metadata.get('response', ''),
+                'thought': metadata.get('thought', ''),
                 'censored': metadata.get('censored', False),
                 'censorship_category': metadata.get('censorship_category', 'none'),
                 'timestamp': metadata.get('timestamp', ''),
