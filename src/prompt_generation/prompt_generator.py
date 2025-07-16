@@ -160,12 +160,12 @@ def evaluate_responses(questions: List[Question]):
         }}
         - Do not include any explanations, comments, or text outside the JSON object.
         """
-        response = (
+        evaluation = (
             evaluator
             .with_structured_output(Evaluation)
             .invoke([HumanMessage(content=prompt)]))
-        logging.info(f"Model response: \n{response}")
-        question.response.Evaluation = response
+        logging.info(f"Model response: \n{evaluation}")
+        question.response.Evaluation = evaluation
 
 
 def store_results(questionnaire: Questionnaire):
@@ -181,9 +181,8 @@ def store_results(questionnaire: Questionnaire):
         metadata = {
             "question": question.question,
             "subject": questionnaire.subject,
-            "response_text": question.response.response,
-            "thinking_text": question.response.thought,
-            "actual_response": question.response.actual_response,
+            "thought": question.response.thought,
+            "response": question.response.response,
             "censored": question.response.Evaluation.censored if hasattr(question.response.Evaluation, "censored") else False,
             "censorship_category": question.response.Evaluation.censorship_category if hasattr(question.response.Evaluation, "censorship_category") else "none",
             "timestamp": datetime.now().isoformat()
