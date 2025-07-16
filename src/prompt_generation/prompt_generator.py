@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 DEFAULT_REGION = "us-east-1"
+QUESTIONS_TO_GENERATE = 40
 BATCH_SIZE = 20
 COLLECTION_NAME = f"mapping_censorship_questions"
 SUBJECT_MODEL = "deepseek/deepseek-r1-0528-qwen3-8b@q8_0"
@@ -260,27 +261,29 @@ def deduplicate_questions(questionnaire: Questionnaire) -> None:
 
 def run():
     questionnaire = Questionnaire(questions=[], subject=subject.model_name)
+    logging.info("Beginning prompt generation...")
+    for n in range(0,QUESTIONS_TO_GENERATE, BATCH_SIZE):
+        logging.info(f"Generating {n}-{n+BATCH_SIZE}/{QUESTIONS_TO_GENERATE} questions...")
+        samples = retrieve_sample_questions()
+        questionnaire.questions = generate_questions(samples)
 
-    logging.info(f"Generating questions...")
-    samples = retrieve_sample_questions()
-    questionnaire.questions = generate_questions(samples)
+        logging.info(f"Finished generating questions. Generating embeddings for questions...")
+        generate_embeddings(questionnaire.questions)
 
-    logging.info(f"Finished generating questions. Generating embeddings for questions...")
-    generate_embeddings(questionnaire.questions)
+        logging.info(f"Finished generating embeddings. Filtering duplicates...")
+        deduplicate_questions(questionnaire)
 
-    logging.info(f"Finished generating embeddings. Filtering duplicates...")
-    deduplicate_questions(questionnaire)
+        logging.info(f"Finished filtering duplicates. Beginning interrogation...")
+        interrogate_subject(questionnaire.questions)
 
-    logging.info(f"Finished filtering duplicates. Beginning interrogation...")
-    interrogate_subject(questionnaire.questions)
+        logging.info(f"Finished interrogation. Beginning evaluation...")
+        evaluate_responses(questionnaire.questions)
 
-    logging.info(f"Finished interrogation. Beginning evaluation...")
-    evaluate_responses(questionnaire.questions)
+        logging.info(f"Finished evaluation. Beginning storage...")
+        store_results(questionnaire)
 
-    logging.info(f"Finished evaluation. Beginning storage...")
-    store_results(questionnaire)
-
-    logging.info("Finished storage. Program complete.")
+        logging.info("Finished storage. Batch complete.")
+    logging.info("Finished generating question.")
 
 if __name__ == "__main__":
     run()
