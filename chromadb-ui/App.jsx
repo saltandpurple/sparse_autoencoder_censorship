@@ -47,6 +47,14 @@ const App = () => {
 		}
 	};
 
+	const expandAll = () => {
+		setExpandedItems(new Set(data.map(item => item.id)));
+	};
+
+	const collapseAll = () => {
+		setExpandedItems(new Set());
+	};
+
 	if (loading) {
 		return <div className="loading">Loading...</div>;
 	}
@@ -60,6 +68,16 @@ const App = () => {
 
 			<main className="content">
 				<div className="items-container">
+					<div className="controls">
+						<div>
+							<button className="expand-all-btn" onClick={expandAll}>
+								Expand All
+							</button>
+							<button className="expand-all-btn" onClick={collapseAll} style={{marginLeft: '0.5rem'}}>
+								Collapse All
+							</button>
+						</div>
+					</div>
 					{data.map((item) => {
 						const isExpanded = expandedItems.has(item.id);
 						return (
