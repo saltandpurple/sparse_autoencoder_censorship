@@ -78,8 +78,9 @@ const App = () => {
 											onClick={(e) => {
 												e.stopPropagation();
 												deleteItem(item.id);
-											}}>
-											X
+											}}
+										>
+											×
 										</button>
 										<span className="expand-icon">
                       {isExpanded ? '▼' : '▶'}

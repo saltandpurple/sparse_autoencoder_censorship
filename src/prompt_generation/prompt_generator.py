@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 DEFAULT_REGION = "us-east-1"
-BATCH_SIZE = 40
+BATCH_SIZE = 20
 COLLECTION_NAME = f"mapping_censorship_questions"
 SUBJECT_MODEL = "deepseek/deepseek-r1-0528-qwen3-8b@q8_0"
 LMSTUDIO_LOCAL_URL = os.getenv("INFERENCE_SERVER_URL")

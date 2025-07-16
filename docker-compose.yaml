@@ -16,13 +16,30 @@ services:
   chromadb-ui:
     build:
       context: chromadb-ui
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.ui
     ports:
       - "3000:3000"
+    depends_on:
+      - chromadb-api
+      - chromadb
+    networks:
+      - app-network
+
+  chromadb-api:
+    build:
+      context: .
+      dockerfile: chromadb-ui/Dockerfile.api
+    ports:
+      - "8001:8001"
+    environment:
+      - CHROMADB_HOST=chromadb
+      - CHROMADB_PORT=8000
     depends_on:
       - chromadb
     networks:
       - app-network
+    volumes:
+      - .env:/app/.env:ro
 
 networks:
   app-network:
