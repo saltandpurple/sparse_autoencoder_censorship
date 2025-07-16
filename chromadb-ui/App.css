@@ -121,17 +121,17 @@ body {
     color: #666;
 }
 
-.question, .response {
+.question, .response, .thought {
     margin-bottom: 1rem;
 }
 
-.question h3, .response h3 {
+.question h3, .response h3, .thought h3 {
     color: #333;
     margin-bottom: 0.5rem;
     font-size: 1rem;
 }
 
-.question p, .response p {
+.question p, .response p, .thought p{
     color: #555;
     line-height: 1.5;
     padding: 0.75rem;
@@ -142,6 +142,9 @@ body {
 
 .response p {
     border-left-color: #28a745;
+}
+.thought p {
+    border-left-color: #ffc107;
 }
 
 .item-compact {
