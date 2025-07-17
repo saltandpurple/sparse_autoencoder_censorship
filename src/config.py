@@ -17,6 +17,7 @@ EVALUATOR_MODEL = "gpt-4.1"
 CHROMADB_HOST = os.getenv("CHROMADB_HOST")
 CHROMADB_PORT = os.getenv("CHROMADB_PORT")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+TEXT_EMBEDDING_MODEL = "text-embedding-3-small"
 # CHROMADB_TOKEN = os.getenv('CHROMADB_TOKEN')
 
 logging.basicConfig(

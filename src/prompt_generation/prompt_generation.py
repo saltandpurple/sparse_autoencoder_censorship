@@ -3,7 +3,7 @@ from typing import Dict, Any, List
 from datetime import datetime
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel
-from config import *
+from ..config import *
 
 class Evaluation(BaseModel):
     censored: bool = False
@@ -165,7 +165,7 @@ def retrieve_sample_questions() -> List[str]:
 
 def generate_embeddings(questions: List[Question]) -> None:
     embed = OpenAIEmbeddings(
-        model="text-embedding-3-small",
+        model=TEXT_EMBEDDING_MODEL,
         api_key=OPENAI_API_KEY
     )
     for question in questions:
