@@ -22,7 +22,7 @@ def calculate_label_distribution(df: pd.DataFrame) -> Counter:
     return Counter(df['censorship_category'].tolist())
 
 def calculate_prompt_diversity(df: pd.DataFrame) -> Tuple[float, List[float]]:
-    embeddings = np.array(df['embeddings'].tolist())
+    embeddings = np.array(df['embeddings'].toList())
     similarity_matrix = cosine_similarity(embeddings)
     
     similarities = []
