@@ -3,8 +3,6 @@ import plotly.express as px
 import altair as alt
 import sys
 import os
-
-sys.path.append(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src'))
 from dataset_inspection import *
 
 

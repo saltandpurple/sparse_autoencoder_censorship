@@ -8,6 +8,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from langchain_community.embeddings import OpenAIEmbeddings
 from config import *
 
+
 def get_dataset_from_chromadb() -> pd.DataFrame:
     results = collection.get(
         include=['documents', 'metadatas', 'embeddings']
@@ -105,3 +106,15 @@ def get_summary_stats(df: pd.DataFrame) -> Dict[str, Any]:
             'latest': df['timestamp'].max()
         }
     }
+
+def test_run():
+    df = get_dataset_from_chromadb()
+    print(calculate_label_distribution(df))
+    print(calculate_prompt_diversity(df))
+    df = generate_response_embeddings(df)
+    df = create_umap_coordinates(df)
+    print(calculate_response_lengths(df))
+    print(get_distinctive_ngrams(df))
+
+if __name__ == "__main__":
+    test_run()
