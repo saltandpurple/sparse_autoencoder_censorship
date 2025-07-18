@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 import chromadb
+import logging
 
 load_dotenv()
 COLLECTION_NAME = os.getenv("CHROMADB_COLLECTION_NAME")
