@@ -7,10 +7,10 @@ from typing import Dict, List, Tuple, Any
 from collections import Counter
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 
-sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
-from src.config import *
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
+from config import *
 
 
 def get_dataset_from_chromadb() -> pd.DataFrame:
@@ -19,7 +19,8 @@ def get_dataset_from_chromadb() -> pd.DataFrame:
     )
     
     df = pd.DataFrame(results['metadatas'])
-    df['embeddings'] = results['embeddings']
+    # returns an array of shape [<NUM_QUESTIONS>, 1536]
+    df['embeddings'] = [np.array(embedding) for embedding in results['embeddings']]
     df['documents'] = results['documents']
     return df
 
@@ -27,7 +28,7 @@ def calculate_label_distribution(df: pd.DataFrame) -> Counter:
     return Counter(df['censorship_category'].tolist())
 
 def calculate_prompt_diversity(df: pd.DataFrame) -> Tuple[float, List[float]]:
-    embeddings = np.array(df['embeddings'].toList())
+    embeddings = np.stack(df['embeddings'])
     similarity_matrix = cosine_similarity(embeddings)
     
     similarities = []
