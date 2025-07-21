@@ -1,10 +1,14 @@
 import pprint
+import sys
+import os
 from typing import Dict, Any, List
 from datetime import datetime
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel
-from config import *
+
+sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
+from src.config import *
 
 class Evaluation(BaseModel):
     censored: bool = False

@@ -1,3 +1,5 @@
+import sys
+import os
 import umap
 import numpy as np
 import pandas as pd
@@ -6,7 +8,9 @@ from collections import Counter
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from langchain_community.embeddings import OpenAIEmbeddings
-from config import *
+
+sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
+from src.config import *
 
 
 def get_dataset_from_chromadb() -> pd.DataFrame:
