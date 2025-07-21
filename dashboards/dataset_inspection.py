@@ -20,8 +20,7 @@ def load_data():
 
 @st.cache_data(hash_funcs={pd.DataFrame: id})
 def get_umap_data(df):
-    df_with_embeddings = generate_response_embeddings(df)
-    return create_umap_coordinates(df_with_embeddings)
+    return create_umap_coordinates(df)
 
 @st.cache_data(hash_funcs={pd.DataFrame: id})
 def get_ngrams_data(df):
@@ -36,6 +35,7 @@ def get_dataset_from_chromadb() -> pd.DataFrame:
     df = pd.DataFrame(results['metadatas'])
     # returns an array of shape [<NUM_QUESTIONS>, 1536]
     df['embeddings'] = [np.array(embedding) for embedding in results['embeddings']]
+    df['response_embeddings'] = [np.]
     df['documents'] = results['documents']
     return df
 
@@ -115,7 +115,6 @@ def test_run():
     df = get_dataset_from_chromadb()
     print(calculate_label_distribution(df))
     print(calculate_prompt_diversity(df))
-    df = generate_response_embeddings(df)
     df = create_umap_coordinates(df)
     print(calculate_response_lengths(df))
     print(get_distinctive_ngrams(df))

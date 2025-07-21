@@ -12,12 +12,14 @@ CHROMADB_HOST = os.getenv("CHROMADB_HOST")
 CHROMADB_PORT = os.getenv("CHROMADB_PORT")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TEXT_EMBEDDING_MODEL = os.getenv("TEXT_EMBEDDING_MODEL")
-SUBJECT_MODEL = "deepseek/deepseek-r1-0528-qwen3-8b@q8_0"
+# todo: rename this
+LMSTUDIO_LOCAL_URL = os.getenv("INFERENCE_SERVER_URL")
 QUESTIONS_TO_GENERATE = 100
 BATCH_SIZE = 20
-LMSTUDIO_LOCAL_URL = os.getenv("INFERENCE_SERVER_URL")
-GENERATOR_MODEL = "gpt-4.1"
-EVALUATOR_MODEL = "gpt-o3-mini"
+SUBJECT_MODEL = "deepseek-r1-0528-qwen3-8b"
+GENERATOR_MODEL = "gpt-4.1-mini"
+# EVALUATOR_MODEL = "gpt-4.1-mini"
+EVALUATOR_MODEL = "o4-mini"
 # CHROMADB_TOKEN = os.getenv('CHROMADB_TOKEN')
 
 logging.basicConfig(
@@ -49,7 +51,7 @@ subject = ChatOpenAI(
 
 evaluator = ChatOpenAI(
     model=EVALUATOR_MODEL,
-    temperature=0,
+    # temperature=0,
     api_key=os.getenv("OPENAI_API_KEY")
 )
 

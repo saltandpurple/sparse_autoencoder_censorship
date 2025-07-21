@@ -173,7 +173,7 @@ def generate_question_embeddings(questions: List[Question]) -> None:
 
 def generate_response_embeddings(questionnaire: Questionnaire) -> None:
     for question in questionnaire.questions:
-        question.response.embedding = embed.embed_query(question.response.respone)
+        question.response.embedding = embed.embed_query(question.response.response)
 
 def deduplicate_questions(questionnaire: Questionnaire) -> None:
     if collection.count() == 0:

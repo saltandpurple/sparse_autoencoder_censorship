@@ -73,8 +73,7 @@ st.header("3. Response Embeddings UMAP")
 
 @st.cache_data
 def get_umap_data(df):
-    df_with_embeddings = generate_response_embeddings(df)
-    return create_umap_coordinates(df_with_embeddings)
+    return create_umap_coordinates(df)
 
 with st.spinner("Generating response embeddings and UMAP coordinates..."):
     df_umap = get_umap_data(df)
