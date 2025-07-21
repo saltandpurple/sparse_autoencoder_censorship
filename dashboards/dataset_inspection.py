@@ -1,5 +1,6 @@
 import sys
 import os
+import streamlit as st
 import umap
 import numpy as np
 import pandas as pd
@@ -11,6 +12,20 @@ from langchain_openai import OpenAIEmbeddings
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 from config import *
+
+# todo: fix this properly
+@st.cache_data(hash_funcs={pd.DataFrame: id})
+def load_data():
+    return get_dataset_from_chromadb()
+
+@st.cache_data(hash_funcs={pd.DataFrame: id})
+def get_umap_data(df):
+    df_with_embeddings = generate_response_embeddings(df)
+    return create_umap_coordinates(df_with_embeddings)
+
+@st.cache_data(hash_funcs={pd.DataFrame: id})
+def get_ngrams_data(df):
+    return get_distinctive_ngrams(df, n=10)
 
 
 def get_dataset_from_chromadb() -> pd.DataFrame:
@@ -37,22 +52,6 @@ def calculate_prompt_diversity(df: pd.DataFrame) -> Tuple[float, List[float]]:
         similarities.append(np.max(other_similarities))
     
     return np.mean(similarities), similarities
-
-def generate_response_embeddings(df: pd.DataFrame) -> pd.DataFrame:
-    embed = OpenAIEmbeddings(
-        model=TEXT_EMBEDDING_MODEL,
-        api_key=OPENAI_API_KEY
-    )
-    
-    df_copy = df.copy()
-    response_embeddings = []
-    
-    for response in df['response']:
-        embedding = embed.embed_query(response)
-        response_embeddings.append(embedding)
-    
-    df_copy['response_embeddings'] = response_embeddings
-    return df_copy
 
 def create_umap_coordinates(df: pd.DataFrame) -> pd.DataFrame:
     embeddings = np.array(df['response_embeddings'].tolist())

@@ -3,7 +3,6 @@ import sys
 import os
 from typing import Dict, Any, List
 from datetime import datetime
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel
 
@@ -18,6 +17,7 @@ class Response(BaseModel):
     response: str = ""
     thought: str = ""
     Evaluation: str = ""
+    embedding: List[float] = []
 
 class Question(BaseModel):
     question: str
@@ -76,7 +76,6 @@ def interrogate_subject(questions: List[Question]) -> None:
 
         logging.info(f"Thought: \n{q.response.thought}")
         logging.info(f"Response: \n{q.response.response}")
-
 
 def evaluate_responses(questions: List[Question]):
     for question in questions:
@@ -168,14 +167,13 @@ def retrieve_sample_questions() -> List[str]:
     return samples
 
 
-def generate_embeddings(questions: List[Question]) -> None:
-    embed = OpenAIEmbeddings(
-        model=TEXT_EMBEDDING_MODEL,
-        api_key=OPENAI_API_KEY
-    )
+def generate_question_embeddings(questions: List[Question]) -> None:
     for question in questions:
         question.embedding = embed.embed_query(question.question)
 
+def generate_response_embeddings(questionnaire: Questionnaire) -> None:
+    for question in questionnaire.questions:
+        question.response.embedding = embed.embed_query(question.response.respone)
 
 def deduplicate_questions(questionnaire: Questionnaire) -> None:
     if collection.count() == 0:
@@ -219,7 +217,7 @@ def run():
         questionnaire.questions = generate_questions(samples)
 
         logging.info(f"Finished generating questions. Generating embeddings for questions...")
-        generate_embeddings(questionnaire.questions)
+        generate_question_embeddings(questionnaire.questions)
 
         logging.info(f"Finished generating embeddings. Filtering duplicates...")
         deduplicate_questions(questionnaire)
@@ -227,7 +225,10 @@ def run():
         logging.info(f"Finished filtering duplicates. Beginning interrogation...")
         interrogate_subject(questionnaire.questions)
 
-        logging.info(f"Finished interrogation. Beginning evaluation...")
+        logging.info(f"Finished interrogation. Generating embeddings for responses...")
+        generate_response_embeddings(questionnaire)
+
+        logging.info(f"Finished generating embeddings. Beginning evaluation...")
         evaluate_responses(questionnaire.questions)
 
         logging.info(f"Finished evaluation. Beginning storage...")

@@ -15,4 +15,4 @@ pandas
 plotly
 altair
 streamlit
-umap
+umap-learn

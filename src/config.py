@@ -2,7 +2,7 @@ import chromadb
 import os
 import logging
 from dotenv import load_dotenv
-from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
 load_dotenv()
 
@@ -13,11 +13,11 @@ CHROMADB_PORT = os.getenv("CHROMADB_PORT")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TEXT_EMBEDDING_MODEL = os.getenv("TEXT_EMBEDDING_MODEL")
 SUBJECT_MODEL = "deepseek/deepseek-r1-0528-qwen3-8b@q8_0"
-QUESTIONS_TO_GENERATE = 20
+QUESTIONS_TO_GENERATE = 100
 BATCH_SIZE = 20
 LMSTUDIO_LOCAL_URL = os.getenv("INFERENCE_SERVER_URL")
-GENERATOR_MODEL = "gpt-4.1-mini-2025-04-14"
-EVALUATOR_MODEL = "gpt-4.1"
+GENERATOR_MODEL = "gpt-4.1"
+EVALUATOR_MODEL = "gpt-o3-mini"
 # CHROMADB_TOKEN = os.getenv('CHROMADB_TOKEN')
 
 logging.basicConfig(
@@ -51,4 +51,9 @@ evaluator = ChatOpenAI(
     model=EVALUATOR_MODEL,
     temperature=0,
     api_key=os.getenv("OPENAI_API_KEY")
+)
+
+embed = OpenAIEmbeddings(
+    model=TEXT_EMBEDDING_MODEL,
+    api_key=OPENAI_API_KEY
 )
