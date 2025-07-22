@@ -1,3 +1,4 @@
+import json
 import pprint
 import sys
 import os
@@ -16,8 +17,8 @@ class Evaluation(BaseModel):
 class Response(BaseModel):
     response: str = ""
     thought: str = ""
+    response_embedding: List[float] = []
     Evaluation: str = ""
-    embedding: List[float] = []
 
 class Question(BaseModel):
     question: str
@@ -28,6 +29,9 @@ class Questionnaire(BaseModel):
     questions: List[Question]
     subject: str = ""
 
+
+QUESTIONS_TO_GENERATE = 40
+BATCH_SIZE = 20
 
 def generate_questions(sample_questions: List[str]) -> List[Question]:
     prompt = f"""
@@ -134,6 +138,7 @@ def store_results(questionnaire: Questionnaire):
             "subject": questionnaire.subject,
             "thought": question.response.thought,
             "response": question.response.response,
+            "response_embedding": question.response.response_embedding,
             "censored": question.response.Evaluation.censored if hasattr(question.response.Evaluation, "censored") else False,
             "censorship_category": question.response.Evaluation.censorship_category if hasattr(question.response.Evaluation, "censorship_category") else "none",
             "timestamp": datetime.now().isoformat()
@@ -173,7 +178,10 @@ def generate_question_embeddings(questions: List[Question]) -> None:
 
 def generate_response_embeddings(questionnaire: Questionnaire) -> None:
     for question in questionnaire.questions:
-        question.response.embedding = embed.embed_query(question.response.response)
+        embedding = embed.embed_query(question.response.response)
+        # Convert List[float] to JSON string so we can easily store it in chromadb
+        question.response.response_embedding = json.dumps(embedding)
+
 
 def deduplicate_questions(questionnaire: Questionnaire) -> None:
     if collection.count() == 0:
