@@ -127,11 +127,6 @@ const App = () => {
 											<p>{item.thought}</p>
 										</div>
 
-										<div className="response_embedding">
-											<h3>Response embedding:</h3>
-											<p>{item.response_embedding}</p>
-										</div>
-
 										<div className="timestamp">
 											{new Date(item.timestamp).toLocaleString()}
 										</div>

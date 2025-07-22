@@ -1,4 +1,5 @@
 import sys
+import json
 import os
 import streamlit as st
 import umap
@@ -8,7 +9,6 @@ from typing import Dict, List, Tuple, Any
 from collections import Counter
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from langchain_openai import OpenAIEmbeddings
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 from config import *
@@ -35,7 +35,10 @@ def get_dataset_from_chromadb() -> pd.DataFrame:
     df = pd.DataFrame(results['metadatas'])
     # returns an array of shape [<NUM_QUESTIONS>, 1536]
     df['embeddings'] = [np.array(embedding) for embedding in results['embeddings']]
-    df['response_embeddings'] = [np.]
+    df['response_embeddings'] = [
+        np.array(json.loads(response_embedding))
+        for response_embedding in df['response_embedding']
+    ]
     df['documents'] = results['documents']
     return df
 

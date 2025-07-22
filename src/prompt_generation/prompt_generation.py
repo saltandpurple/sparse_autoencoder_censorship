@@ -30,7 +30,7 @@ class Questionnaire(BaseModel):
     subject: str = ""
 
 
-QUESTIONS_TO_GENERATE = 40
+QUESTIONS_TO_GENERATE = 100
 BATCH_SIZE = 20
 
 def generate_questions(sample_questions: List[str]) -> List[Question]:

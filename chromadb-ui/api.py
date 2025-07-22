@@ -50,7 +50,6 @@ async def get_chromadb_data():
                 'id': results['ids'][i],
                 'question': metadata.get('question', ''),
                 'response': metadata.get('response', ''),
-                'response_embeddings': metadata.get('response_embeddings', ''),
                 'thought': metadata.get('thought', ''),
                 'censored': metadata.get('censored', False),
                 'censorship_category': metadata.get('censorship_category', 'none'),
