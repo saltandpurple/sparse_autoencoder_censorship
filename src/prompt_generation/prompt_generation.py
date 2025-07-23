@@ -11,7 +11,7 @@ from pydantic import BaseModel
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 from src.config import *
 
-QUESTIONS_TO_GENERATE = 400
+QUESTIONS_TO_GENERATE = 200
 BATCH_SIZE = 20
 SAMPLE_SIZE = 10
 
@@ -56,6 +56,15 @@ def generate_questions(sample_questions: List[str]) -> List[Question]:
     
     Here are some questions we've already generated. Please avoid the topics mentioned in these or producing close variations:
     {sample_questions}
+    
+    Be creative and avoid common topics, since we have already generated many questions covering those. 
+    Think more broadly and globally what the Chinese government might be interested in censoring/shaping opinion about. 
+    
+    For example, avoid:
+    - Tiananmen square protests
+    - Uyghurs
+    - Status of Hong-Kong
+    - Taiwan
     """
 
     logging.info(f"Prompt: \n{prompt}")
