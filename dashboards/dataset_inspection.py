@@ -13,16 +13,12 @@ from sklearn.metrics.pairwise import cosine_similarity
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 from config import *
 
-# todo: fix this properly
-@st.cache_data(hash_funcs={pd.DataFrame: id})
 def load_data():
     return get_dataset_from_chromadb()
 
-@st.cache_data(hash_funcs={pd.DataFrame: id})
 def get_umap_data(df):
     return create_umap_coordinates(df)
 
-@st.cache_data(hash_funcs={pd.DataFrame: id})
 def get_ngrams_data(df):
     return get_distinctive_ngrams(df, n=10)
 
