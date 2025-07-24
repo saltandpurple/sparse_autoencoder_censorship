@@ -13,3 +13,4 @@ claude.md
 # Python
 *.env
 __pycache__/
+/data/
