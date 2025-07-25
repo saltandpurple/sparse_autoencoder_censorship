@@ -17,10 +17,7 @@ st.markdown("Analysis of LLM censorship patterns in generated Q&A dataset")
 
 st.sidebar.header("Dataset Overview")
 
-@st.cache_data
-def load_data():
-    return get_dataset_from_chromadb()
-
+# Load data without caching
 df = load_data()
 
 summary_stats = get_summary_stats(df)
@@ -71,11 +68,8 @@ with col2:
 
 st.header("3. Response Embeddings UMAP")
 
-@st.cache_data
-def get_umap_data(df):
-    return create_umap_coordinates(df)
-
-with st.spinner("Generating response embeddings and UMAP coordinates..."):
+with st.spinner("Generating UMAP coordinates from response embeddings..."):
+    # Use the function without caching
     df_umap = get_umap_data(df)
 
 fig_umap = px.scatter(
@@ -126,11 +120,8 @@ with col4:
 
 st.header("5. Distinctive N-grams by Category")
 
-@st.cache_data
-def get_ngrams_data(df):
-    return get_distinctive_ngrams(df, n=10)
-
 with st.spinner("Calculating distinctive n-grams..."):
+    # Use the function without caching
     distinctive_ngrams = get_ngrams_data(df)
 
 categories = list(distinctive_ngrams.keys())
@@ -164,7 +155,6 @@ with col5:
 
 with col6:
     if st.button("Refresh Data"):
-        st.cache_data.clear()
         st.rerun()
 
 st.markdown("---")

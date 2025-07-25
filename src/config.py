@@ -7,15 +7,12 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 load_dotenv()
 
 DEFAULT_REGION = "us-east-1"
-COLLECTION_NAME = os.getenv("CHROMADB_COLLECTION_NAME")
 CHROMADB_HOST = os.getenv("CHROMADB_HOST")
 CHROMADB_PORT = os.getenv("CHROMADB_PORT")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-TEXT_EMBEDDING_MODEL = os.getenv("TEXT_EMBEDDING_MODEL")
-# todo: rename this
 LMSTUDIO_LOCAL_URL = os.getenv("INFERENCE_SERVER_URL")
-QUESTIONS_TO_GENERATE = 100
-BATCH_SIZE = 20
+COLLECTION_NAME= "mapping_censorship_questions"
+TEXT_EMBEDDING_MODEL= "text-embedding-3-small"
 SUBJECT_MODEL = "deepseek-r1-0528-qwen3-8b"
 GENERATOR_MODEL = "gpt-4.1-mini"
 # EVALUATOR_MODEL = "gpt-4.1-mini"
