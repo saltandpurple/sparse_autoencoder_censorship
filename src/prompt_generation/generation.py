@@ -190,8 +190,7 @@ def retrieve_sample_questions() -> List[str]:
             "censored": {
                 "$eq": True
             }
-        }
-    )
+        })
 
     samples = []
     if results and 'metadatas' in results and results['metadatas']:
