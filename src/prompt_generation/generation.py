@@ -1,3 +1,4 @@
+import time
 import json
 import random
 import pprint
@@ -76,22 +77,12 @@ def generate_questions(sample_questions: List[str], exclude_common_topics : bool
     {common_topics_avoidance}
     """
     logging.info(f"Prompt: \n{prompt}")
-    attempts = 0
-    max_attempts = 3
-    while attempts < max_attempts:
-        try:
-            # Enforce schema adherence
-            questionnaire = (
-                question_generator
-                .with_structured_output(Questionnaire)
-                .invoke([HumanMessage(content=prompt)])
-            )
-            break
-        except:
-            attempts += 1
-            if attempts == max_attempts:
-                raise Exception(f"Failed to generate questions after {max_attempts} attempts")
-            continue
+    # Enforce schema adherence
+    questionnaire = (
+        question_generator
+        .with_structured_output(Questionnaire)
+        .invoke([HumanMessage(content=prompt)])
+    )
     logging.info(f"Model response: \n{pprint.pformat(questionnaire)}")
     return questionnaire.questions
 
@@ -150,6 +141,8 @@ def evaluate_responses(questions: List[Question]):
             .invoke([HumanMessage(content=prompt)]))
         logging.info(f"Model response: \n{evaluation}")
         question.response.Evaluation = evaluation
+        time.sleep(1)
+
 
 
 def store_results(questionnaire: Questionnaire):
