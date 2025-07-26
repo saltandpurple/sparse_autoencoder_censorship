@@ -12,7 +12,7 @@ const App = () => {
 
 	const fetchData = async () => {
 		try {
-			const response = await fetch('http://localhost:8001/api/chromadb/data');
+			const response = await fetch('http://localhost:8002/api/chromadb/data');
 			const result = await response.json();
 			setData(result);
 		} catch (error) {
