@@ -1,4 +1,7 @@
-import os, json, numpy as np
+import os
+import json
+import sys
+import numpy as np
 import torch
 from tqdm import tqdm
 from transformer_lens import HookedTransformer
@@ -61,7 +64,7 @@ def capture_activations(state: CaptureState, tokenizer: AutoTokenizer.from_pretr
                            padding=True,
                            truncation=True,
                            max_length=512).to("cuda")
-        
+
         # no gradient needed during inference, saves VRAM & compute
         with torch.no_grad():
             with model.hooks([(TARGET_HOOK, save_hook)]):

@@ -23,3 +23,6 @@ transformer_lens
 tqdm
 numpy
 # chromadb
+
+# misc
+ruff

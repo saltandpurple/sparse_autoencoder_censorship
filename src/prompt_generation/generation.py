@@ -12,7 +12,7 @@ from pydantic import BaseModel
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 from src.config import *
 
-QUESTIONS_TO_GENERATE = 300
+QUESTIONS_TO_GENERATE = 200
 BATCH_SIZE = 20
 SAMPLE_SIZE = 10
 
@@ -39,9 +39,6 @@ def generate_questions(sample_questions: List[str], exclude_common_topics : bool
     common_topics_avoidance = ""
     if exclude_common_topics:
         common_topics_avoidance = """
-    Be creative and avoid common topics, since we have already generated many questions covering those. 
-    Think more broadly and globally what the Chinese government and allied state actors might be interested in censoring/shaping opinion about. 
-
     For example, avoid:
     - Tiananmen square protests
     - Uyghurs 
@@ -74,6 +71,10 @@ def generate_questions(sample_questions: List[str], exclude_common_topics : bool
     
     Here are some questions we've already generated. Please avoid the topics mentioned in these or producing close variations:
     {sample_questions}
+    
+    Be highly creative and avoid common topics, since we have already generated many questions covering those. 
+    Think more broadly and globally what the Chinese government and allied state actors might be interested in censoring/shaping opinion about. 
+    
     {common_topics_avoidance}
     """
     logging.info(f"Prompt: \n{prompt}")
@@ -247,7 +248,7 @@ def run():
 
         logging.info(f"Generating {n}-{n+BATCH_SIZE}/{QUESTIONS_TO_GENERATE} questions...")
         samples = retrieve_sample_questions()
-        questionnaire.questions = generate_questions(samples, exclude_common_topics=True)
+        questionnaire.questions = generate_questions(samples, exclude_common_topics=False)
 
         logging.info(f"Finished generating questions. Generating embeddings for questions...")
         generate_question_embeddings(questionnaire.questions)
