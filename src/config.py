@@ -17,7 +17,6 @@ SUBJECT_MODEL = "deepseek-r1-0528-qwen3-8b"
 GENERATOR_MODEL = "gpt-4.1-mini"
 # EVALUATOR_MODEL = "gpt-4.1-mini"
 EVALUATOR_MODEL = "o4-mini"
-# CHROMADB_TOKEN = os.getenv('CHROMADB_TOKEN')
 
 logging.basicConfig(
     level=logging.INFO,

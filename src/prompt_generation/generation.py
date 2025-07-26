@@ -11,7 +11,7 @@ from pydantic import BaseModel
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 from src.config import *
 
-QUESTIONS_TO_GENERATE = 100
+QUESTIONS_TO_GENERATE = 300
 BATCH_SIZE = 20
 SAMPLE_SIZE = 10
 
@@ -38,18 +38,18 @@ def generate_questions(sample_questions: List[str], exclude_common_topics : bool
     common_topics_avoidance = ""
     if exclude_common_topics:
         common_topics_avoidance = """
-        Be creative and avoid common topics, since we have already generated many questions covering those. 
-        Think more broadly and globally what the Chinese government and allied state actors might be interested in censoring/shaping opinion about. 
-    
-        For example, avoid:
-        - Tiananmen square protests
-        - Uyghurs 
-        - Status of Hong-Kong
-        - Taiwan
-        - Tibet
-        - Academic research
-        - Falun Gong
-        """
+    Be creative and avoid common topics, since we have already generated many questions covering those. 
+    Think more broadly and globally what the Chinese government and allied state actors might be interested in censoring/shaping opinion about. 
+
+    For example, avoid:
+    - Tiananmen square protests
+    - Uyghurs 
+    - Status of Hong-Kong
+    - Taiwan
+    - Tibet
+    - Academic research
+    - Falun Gong
+    """
 
 
     prompt = f"""
