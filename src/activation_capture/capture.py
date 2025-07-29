@@ -45,6 +45,11 @@ def save_hook(activations, hook, state: CaptureState):
 
 def capture_activations(state: CaptureState, tokenizer: AutoTokenizer.from_pretrained, model: HookedTransformer.from_pretrained) -> None:
     index_file = open(INDEX_JSONL, "w")
+
+    # create close to capture state
+    def save_hook_closure(activations, hook):
+        return save_hook(activations, hook, state)
+
     # iterate through stored questions in batches
     for offset in tqdm(range(0, state.total_rows, BATCH_SIZE)):
         start_idx = state.write_idx
@@ -66,7 +71,7 @@ def capture_activations(state: CaptureState, tokenizer: AutoTokenizer.from_pretr
 
         # no gradient needed during inference, saves VRAM & compute
         with torch.no_grad():
-            with model.hooks([(TARGET_HOOK, save_hook)]):
+            with model.hooks([(TARGET_HOOK, save_hook_closure)]):
                 _ = model(tokens['input_ids'])
     index_file.close()
 
