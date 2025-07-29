@@ -40,7 +40,11 @@ def save_hook(activations, hook, state: CaptureState):
         )
 
     n = batch_vectors.shape[0]
-    state.buffer[state.write_idx : state.write_idx + n, :] = batch_vectors.numpy()
+    # Make sure we don't exceed the number of samples we have left
+    remaining_samples = state.total_rows - state.write_idx
+    n = min(n, remaining_samples)
+
+    state.buffer[state.write_idx : state.write_idx + n, :] = batch_vectors[:n].numpy()
     state.buffer.flush()
     state.write_idx += n
 
