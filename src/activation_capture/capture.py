@@ -30,15 +30,17 @@ def save_hook(activations, hook, state: CaptureState):
     # [batch, seq, hidden_dim]  →  [batch, hidden_dim]
     batch_vectors = activations.detach().cpu().mean(dim=1).float()
     if state.buffer is None:
+        # Convert torch dtype to numpy dtype
+        numpy_dtype = np.float32 if activations.dtype == torch.bfloat16 else activations.detach().cpu().numpy().dtype
         state.buffer = np.memmap(
             state.out_path,
-            dtype=activations.dtype,
+            dtype=numpy_dtype,
             mode="w+",
-            shape=(state.total_rows, *activations.shape[1:])
+            shape=(state.total_rows, *batch_vectors.shape[1:])
         )
 
     n = batch_vectors.shape[0]
-    state.buffer[state.write_idx : state.write_idx + n, :] = batch_vectors
+    state.buffer[state.write_idx : state.write_idx + n, :] = batch_vectors.numpy()
     state.buffer.flush()
     state.write_idx += n
 
