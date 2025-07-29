@@ -28,7 +28,9 @@ class CaptureState:
 
 def save_hook(activations, hook, state: CaptureState):
     # [batch, seq, hidden_dim]  →  [batch, hidden_dim]
+    print(f"Raw activation shape: {activations.shape}")
     batch_vectors = activations.detach().cpu().mean(dim=1).float()
+    print(f"After mean: {batch_vectors.shape}")
     if state.buffer is None:
         # Convert torch dtype to numpy dtype
         numpy_dtype = np.float32 if activations.dtype == torch.bfloat16 else activations.detach().cpu().numpy().dtype
@@ -84,7 +86,7 @@ def capture_activations(state: CaptureState, tokenizer: AutoTokenizer.from_pretr
 
 
 if __name__ == "__main__":
-    # fetch ids only for counting (nasty, but chromadb doesn't allow any count without fetching stuff)
+    # fetch ids for counting (nasty, but chromadb doesn't allow any count without fetching stuff)
     censored_prompts = collection.get(
         where={
             "censored": {
