@@ -19,8 +19,8 @@ app.add_middleware(
 )
 
 COLLECTION_NAME = "mapping_censorship_questions"
-CHROMADB_HOST = os.getenv("CHROMADB_HOST", "192.168.5.123")
-CHROMADB_PORT = os.getenv("CHROMADB_PORT", "8000")
+CHROMADB_HOST = "192.168.5.123"
+CHROMADB_PORT = "8000"
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
