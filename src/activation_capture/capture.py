@@ -57,7 +57,6 @@ def capture_activations(state: CaptureState, tokenizer: AutoTokenizer.from_pretr
             index_file.write(json.dumps({"row": start_idx + i,  "prompt": prompt}) + "\n")
         index_file.flush()
 
-        # tokenise prompt & forward
         tokens = tokenizer(prompts,
                            return_tensors="pt",
                            padding=True,
@@ -73,15 +72,20 @@ def capture_activations(state: CaptureState, tokenizer: AutoTokenizer.from_pretr
 
 
 if __name__ == "__main__":
-    prompt_count = collection.count(where={
-        "censored": {
-            "$eq": True
-        }
-    })
-    print(f"Found {prompt_count} censored prompts in Chroma collection “{COLLECTION_NAME}”")
+    # fetch ids only for counting (nasty, but chromadb doesn't allow any count without fetching stuff)
+    censored_prompts = collection.get(
+        where={
+            "censored": {
+                "$eq": True
+            }
+        },
+        include=[]
+    )
+    count = len(censored_prompts["ids"])
+    print(f"Found {censored_prompts} censored prompts in Chroma collection “{COLLECTION_NAME}”")
 
     print(f"Capturing activations for {TARGET_HOOK}...")
-    state = CaptureState(total_rows=prompt_count, out_path=OUTPUT_FILE)
+    state = CaptureState(total_rows=count, out_path=OUTPUT_FILE)
     tokenizer = AutoTokenizer.from_pretrained(SUBJECT_MODEL, use_fast=True)
     model = HookedTransformer.from_pretrained(SUBJECT_MODEL, device="cuda", dtype=torch.bfloat16)
 
