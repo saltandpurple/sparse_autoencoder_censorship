@@ -12,7 +12,7 @@ from src.config import *
 # --- Config ---
 BATCH_SIZE = 8
 TARGET_HOOK = "blocks.12.mlp.hook_post"
-MODEL_WEIGHTS_DIR = MODEL_STORAGE_DIR + SUBJECT_MODEL
+MODEL_WEIGHTS_DIR = os.path.join(MODEL_STORAGE_DIR, SUBJECT_MODEL)
 # TARGET_HOOK = "blocks.8.attn.hook_z"
 OUTPUT_FILE = "layer12_post_acts.npy"
 INDEX_JSONL = "captured_index.jsonl"
