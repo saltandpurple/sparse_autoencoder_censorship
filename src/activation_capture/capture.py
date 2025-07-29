@@ -12,7 +12,7 @@ from src.config import *
 # --- Config ---
 BATCH_SIZE = 8
 TARGET_HOOK = "blocks.12.mlp.hook_post"
-MODEL_WEIGHTS_DIR = os.path.join(MODEL_STORAGE_DIR, SUBJECT_MODEL)
+# MODEL_WEIGHTS_DIR = os.path.join(MODEL_STORAGE_DIR, SUBJECT_MODEL)
 # TARGET_HOOK = "blocks.8.attn.hook_z"
 OUTPUT_FILE = "layer12_post_acts.npy"
 INDEX_JSONL = "captured_index.jsonl"
@@ -87,42 +87,16 @@ if __name__ == "__main__":
 
     print(f"Capturing activations for {TARGET_HOOK}...")
     state = CaptureState(total_rows=count, out_path=OUTPUT_FILE)
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_WEIGHTS_DIR,
+    tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen3-8B",
                                               use_fast=True,
                                               local_files_only=True,
                                               trust_remote_code=True)
 
-    with open(os.path.join(MODEL_WEIGHTS_DIR, "config.json"), "r") as f:
-        hf_config = json.load(f)
 
-    cfg = HookedTransformerConfig(
-        n_layers=hf_config["num_hidden_layers"],
-        d_model=hf_config["hidden_size"],
-        n_heads=hf_config["num_attention_heads"],
-        d_head=hf_config["hidden_size"] // hf_config["num_attention_heads"],
-        n_ctx=hf_config["max_position_embeddings"],
-        d_vocab=hf_config["vocab_size"],
-        act_fn=hf_config.get("hidden_act", "silu"),
-        model_name="deepseek-r1-local",
-        tokenizer_name=MODEL_WEIGHTS_DIR
-    )
 
-    state_dict = {}
-    safetensor_files = [f for f in os.listdir(MODEL_WEIGHTS_DIR) if f.endswith('.safetensors')]
-
-    for file in safetensor_files:
-        file_path = os.path.join(MODEL_WEIGHTS_DIR, file)
-        with safe_open(file_path, framework="pt", device="cpu") as f:
-            for key in f.keys():
-                state_dict[key] = f.get_tensor(key)
-
-    model = HookedTransformer.from_pretrained_no_processing(
-        model_name=SUBJECT_MODEL,
-        cfg=cfg,
-        state_dict=state_dict,
-        fold_ln=False,
-        center_writing_weights=False
-    )
+    model = HookedTransformer.from_pretrained("Qwen/Qwen3-8B",  # Still need a model name
+                                              local_files_only=True,
+                                              device="cuda", dtype=torch.bfloat16)
 
 
     capture_activations(state, tokenizer, model)
