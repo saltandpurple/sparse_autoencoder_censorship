@@ -3,8 +3,9 @@ import json
 import sys
 import numpy as np
 import torch
+from safetensors import safe_open
 from tqdm import tqdm
-from transformer_lens import HookedTransformer
+from transformer_lens import HookedTransformer, HookedTransformerConfig
 from transformers import AutoTokenizer
 from src.config import *
 
@@ -90,10 +91,39 @@ if __name__ == "__main__":
                                               use_fast=True,
                                               local_files_only=True,
                                               trust_remote_code=True)
-    model = HookedTransformer.from_pretrained("deepseek-ai/deepseek-r1",  # Still need a model name
-                                              cache_dir=MODEL_WEIGHTS_DIR,
-                                              local_files_only=True,
-                                              device="cuda", dtype=torch.bfloat16)
+
+    with open(os.path.join(MODEL_WEIGHTS_DIR, "config.json"), "r") as f:
+        hf_config = json.load(f)
+
+    cfg = HookedTransformerConfig(
+        n_layers=hf_config["num_hidden_layers"],
+        d_model=hf_config["hidden_size"],
+        n_heads=hf_config["num_attention_heads"],
+        d_head=hf_config["hidden_size"] // hf_config["num_attention_heads"],
+        n_ctx=hf_config["max_position_embeddings"],
+        d_vocab=hf_config["vocab_size"],
+        act_fn=hf_config.get("hidden_act", "silu"),
+        model_name="deepseek-r1-local",
+        tokenizer_name=MODEL_WEIGHTS_DIR
+    )
+
+    state_dict = {}
+    safetensor_files = [f for f in os.listdir(MODEL_WEIGHTS_DIR) if f.endswith('.safetensors')]
+
+    for file in safetensor_files:
+        file_path = os.path.join(MODEL_WEIGHTS_DIR, file)
+        with safe_open(file_path, framework="pt", device="cpu") as f:
+            for key in f.keys():
+                state_dict[key] = f.get_tensor(key)
+
+    model = HookedTransformer.from_pretrained_no_processing(
+        model_name=SUBJECT_MODEL,
+        cfg=cfg,
+        state_dict=state_dict,
+        fold_ln=False,
+        center_writing_weights=False
+    )
+
 
     capture_activations(state, tokenizer, model)
 
