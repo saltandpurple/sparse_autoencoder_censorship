@@ -15,8 +15,12 @@ from config import *
 def load_data():
     return get_dataset_from_chromadb()
 
-def get_umap_data(df):
-    return create_umap_coordinates(df)
+def get_response_umap(df):
+    return generate_response_umap(df)
+
+def get_question_umap(df):
+    return generate_question_umap(df)
+
 
 def get_ngrams_data(df):
     return get_distinctive_ngrams(df, n=10)
@@ -51,16 +55,28 @@ def calculate_prompt_diversity(df: pd.DataFrame) -> Tuple[float, List[float]]:
     
     return np.mean(similarities), similarities
 
-def create_umap_coordinates(df: pd.DataFrame) -> pd.DataFrame:
+def generate_response_umap(df: pd.DataFrame) -> pd.DataFrame:
     embeddings = np.array(df['response_embeddings'].tolist())
     
     reducer = umap.UMAP(n_components=2, random_state=42)
     umap_coords = reducer.fit_transform(embeddings)
     
     df_copy = df.copy()
-    df_copy['umap_x'] = umap_coords[:, 0]
-    df_copy['umap_y'] = umap_coords[:, 1]
+    df_copy['response_umap_x'] = umap_coords[:, 0]
+    df_copy['response_umap_y'] = umap_coords[:, 1]
     
+    return df_copy
+
+def generate_question_umap(df: pd.DataFrame) -> pd.DataFrame:
+    embeddings = np.array(df['embeddings'].tolist())
+
+    reducer = umap.UMAP(n_components=2, random_state=42)
+    umap_coords = reducer.fit_transform(embeddings)
+
+    df_copy = df.copy()
+    df_copy['question_umap_x'] = umap_coords[:, 0]
+    df_copy['question_umap_y'] = umap_coords[:, 1]
+
     return df_copy
 
 def calculate_response_lengths(df: pd.DataFrame) -> List[int]:
@@ -113,7 +129,8 @@ def test_run():
     df = get_dataset_from_chromadb()
     print(calculate_label_distribution(df))
     print(calculate_prompt_diversity(df))
-    df = create_umap_coordinates(df)
+    df = generate_response_umap(df)
+    df = generate_question_umap(df)
     print(calculate_response_lengths(df))
     print(get_distinctive_ngrams(df))
 

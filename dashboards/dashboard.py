@@ -66,25 +66,42 @@ with col2:
     )
     st.plotly_chart(fig_hist, use_container_width=True)
 
-st.header("3. Response Embeddings UMAP")
+st.header("3. Question Embeddings UMAP")
+with st.spinner("Generating UMAP coordinates from question embeddings..."):
+    # Use the function without caching
+    df_umap = get_question_umap(df)
+
+figure_question_umap = px.scatter(
+    df_umap,
+    x='question_umap_x',
+    y='question_umap_y',
+    hover_data=['question'],
+    title="UMAP Visualization of Question Embeddings",
+    labels={'question_umap_x': 'UMAP 1', 'question_umap_y': 'UMAP 2'}
+)
+figure_question_umap.update_traces(marker=dict(size=8, opacity=0.7))
+st.plotly_chart(figure_question_umap, use_container_width=True)
+
+
+st.header("4. Response Embeddings UMAP")
 
 with st.spinner("Generating UMAP coordinates from response embeddings..."):
     # Use the function without caching
-    df_umap = get_umap_data(df)
+    df_umap = get_response_umap(df)
 
-fig_umap = px.scatter(
+figure_response_umap = px.scatter(
     df_umap,
-    x='umap_x',
-    y='umap_y',
+    x='response_umap_x',
+    y='response_umap_y',
     color='censorship_category',
-    hover_data=['question', 'response'],
+    hover_data=['response'],
     title="UMAP Visualization of Response Embeddings",
-    labels={'umap_x': 'UMAP 1', 'umap_y': 'UMAP 2'}
+    labels={'response_umap_x': 'UMAP 1', 'response_umap_y': 'UMAP 2'}
 )
-fig_umap.update_traces(marker=dict(size=8, opacity=0.7))
-st.plotly_chart(fig_umap, use_container_width=True)
+figure_response_umap.update_traces(marker=dict(size=8, opacity=0.7))
+st.plotly_chart(figure_response_umap, use_container_width=True)
 
-st.header("4. Response Length Distribution")
+st.header("5. Response Length Distribution")
 
 col3, col4 = st.columns(2)
 
@@ -118,7 +135,7 @@ with col4:
     fig_box.update_xaxes(tickangle=45)
     st.plotly_chart(fig_box, use_container_width=True)
 
-st.header("5. Distinctive N-grams by Category")
+st.header("6. Distinctive N-grams by Category")
 
 with st.spinner("Calculating distinctive n-grams..."):
     # Use the function without caching
