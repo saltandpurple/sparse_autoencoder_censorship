@@ -6,8 +6,6 @@ import torch
 from tqdm import tqdm
 from transformer_lens import HookedTransformer
 from transformers import AutoTokenizer
-from wandb.util import local_file_uri_to_path
-
 from src.config import *
 
 # --- Config ---
@@ -17,6 +15,7 @@ MODEL_WEIGHTS_DIR = os.path.join(MODEL_STORAGE_DIR, SUBJECT_MODEL)
 # TARGET_HOOK = "blocks.8.attn.hook_z"
 OUTPUT_FILE = "layer12_post_acts.npy"
 INDEX_JSONL = "captured_index.jsonl"
+os.environ['HF_HUB_OFFLINE'] = '1'
 # --------------
 
 class CaptureState:
@@ -88,7 +87,7 @@ if __name__ == "__main__":
 
     print(f"Capturing activations for {TARGET_HOOK}...")
     state = CaptureState(total_rows=count, out_path=OUTPUT_FILE)
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_WEIGHTS_DIR, use_fast=True, local_files_only=True)
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_WEIGHTS_DIR, use_fast=True)
     model = HookedTransformer.from_pretrained(MODEL_WEIGHTS_DIR, device="cuda", dtype=torch.bfloat16)
 
     capture_activations(state, tokenizer, model)
