@@ -1,16 +1,4 @@
-import time
-import json
-import random
-import pprint
-import sys
-import os
-from typing import Dict, Any, List
-from datetime import datetime
-from langchain_core.messages import HumanMessage
-from pydantic import BaseModel
-
-sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
-from src.config import *
+# All imports moved to __init__.py
 
 QUESTIONS_TO_GENERATE = 200
 BATCH_SIZE = 20

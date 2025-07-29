@@ -1,14 +1,4 @@
-import os
-import json
-import sys
-import numpy as np
-import torch
-from tqdm import tqdm
-from transformer_lens import HookedTransformer
-from transformers import AutoTokenizer
-
-sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
-from src.config import *
+# All imports moved to __init__.py
 
 # --- Config ---
 BATCH_SIZE = 8
