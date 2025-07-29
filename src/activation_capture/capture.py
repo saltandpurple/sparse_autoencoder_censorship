@@ -67,7 +67,7 @@ def capture_activations(state: CaptureState, tokenizer: AutoTokenizer.from_pretr
         # no gradient needed during inference, saves VRAM & compute
         with torch.no_grad():
             with model.hooks([(TARGET_HOOK, save_hook)]):
-                _ = model(**tokens)
+                _ = model(tokens['input_ids'])
     index_file.close()
 
 
@@ -87,16 +87,8 @@ if __name__ == "__main__":
 
     print(f"Capturing activations for {TARGET_HOOK}...")
     state = CaptureState(total_rows=count, out_path=OUTPUT_FILE)
-    tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen3-8B",
-                                              use_fast=True,
-                                              local_files_only=True,
-                                              trust_remote_code=True)
-
-
-
-    model = HookedTransformer.from_pretrained("Qwen/Qwen3-8B",  # Still need a model name
-                                              local_files_only=True,
-                                              device="cuda", dtype=torch.bfloat16)
+    tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen3-8B", use_fast=True, trust_remote_code=True)
+    model = HookedTransformer.from_pretrained("Qwen/Qwen3-8B", device="cuda", trust_remote_code=True, dtype=torch.bfloat16)
 
 
     capture_activations(state, tokenizer, model)
