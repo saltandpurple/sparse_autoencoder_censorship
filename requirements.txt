@@ -1,4 +1,4 @@
-langgraph>=0.1.0
+# prompt-generation
 langchain>=0.2.0
 langchain-openai
 langchain-community
@@ -6,9 +6,10 @@ boto3>=1.34.0
 botocore>=1.34.0
 python-dotenv>=1.0.0
 chromadb
+
+# chromadb ui
 fastapi
 uvicorn
-
 matplotlib
 scikit-learn
 pandas
@@ -16,3 +17,12 @@ plotly
 altair
 streamlit
 umap-learn
+
+# activation capture
+transformer_lens
+tqdm
+numpy
+# chromadb
+
+# misc
+ruff

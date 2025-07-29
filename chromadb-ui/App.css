@@ -233,6 +233,41 @@ body {
     background: #0056b3;
 }
 
+.filters {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.filters select {
+    background: #1e1e1e;
+    color: #e0e0e0;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.filters select:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+.filters button {
+    background: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+}
+
+.filters button:hover {
+    background: #5a6268;
+}
+
 @media (max-width: 768px) {
     .header {
         padding: 1rem;

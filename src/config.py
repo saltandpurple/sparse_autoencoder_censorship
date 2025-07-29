@@ -14,10 +14,10 @@ LMSTUDIO_LOCAL_URL = os.getenv("INFERENCE_SERVER_URL")
 COLLECTION_NAME= "mapping_censorship_questions"
 TEXT_EMBEDDING_MODEL= "text-embedding-3-small"
 SUBJECT_MODEL = "deepseek-r1-0528-qwen3-8b"
-GENERATOR_MODEL = "gpt-4.1-mini"
-# EVALUATOR_MODEL = "gpt-4.1-mini"
-EVALUATOR_MODEL = "o4-mini"
-# CHROMADB_TOKEN = os.getenv('CHROMADB_TOKEN')
+# GENERATOR_MODEL = "gpt-4.1-mini"
+GENERATOR_MODEL = "o4-mini"
+EVALUATOR_MODEL = "gpt-4.1-mini"
+# EVALUATOR_MODEL = "o4-mini"
 
 logging.basicConfig(
     level=logging.INFO,
@@ -36,8 +36,10 @@ collection = chroma_client.get_or_create_collection(name=COLLECTION_NAME)
 
 question_generator = ChatOpenAI(
     model=GENERATOR_MODEL,
-    temperature=1.2,
-    api_key=os.getenv("OPENAI_API_KEY")
+    # temperature=1.2,
+    api_key=os.getenv("OPENAI_API_KEY"),
+    timeout=120,
+    max_retries=3
 )
 
 subject = ChatOpenAI(
@@ -48,8 +50,10 @@ subject = ChatOpenAI(
 
 evaluator = ChatOpenAI(
     model=EVALUATOR_MODEL,
-    # temperature=0,
-    api_key=os.getenv("OPENAI_API_KEY")
+    temperature=0,
+    api_key=os.getenv("OPENAI_API_KEY"),
+    timeout=120,
+    max_retries=3
 )
 
 embed = OpenAIEmbeddings(

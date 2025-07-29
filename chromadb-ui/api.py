@@ -19,8 +19,8 @@ app.add_middleware(
 )
 
 COLLECTION_NAME = "mapping_censorship_questions"
-CHROMADB_HOST = os.getenv("CHROMADB_HOST", "localhost")
-CHROMADB_PORT = os.getenv("CHROMADB_PORT", "8000")
+CHROMADB_HOST = "192.168.5.123"
+CHROMADB_PORT = "8000"
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -109,4 +109,4 @@ async def get_stats():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    uvicorn.run(app, host="0.0.0.0", port=8002)
