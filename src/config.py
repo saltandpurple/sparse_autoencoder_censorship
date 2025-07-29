@@ -11,6 +11,7 @@ CHROMADB_HOST = os.getenv("CHROMADB_HOST")
 CHROMADB_PORT = os.getenv("CHROMADB_PORT")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 LMSTUDIO_LOCAL_URL = os.getenv("INFERENCE_SERVER_URL")
+MODEL_STORAGE_DIR = os.getenv("MODEL_STORAGE_DIR")
 COLLECTION_NAME= "mapping_censorship_questions"
 TEXT_EMBEDDING_MODEL= "text-embedding-3-small"
 SUBJECT_MODEL = "deepseek-r1-0528-qwen3-8b"
