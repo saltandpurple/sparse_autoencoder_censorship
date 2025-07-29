@@ -6,6 +6,7 @@ import torch
 from tqdm import tqdm
 from transformer_lens import HookedTransformer
 from transformers import AutoTokenizer
+from wandb.util import local_file_uri_to_path
 
 from src.config import *
 
@@ -87,7 +88,7 @@ if __name__ == "__main__":
 
     print(f"Capturing activations for {TARGET_HOOK}...")
     state = CaptureState(total_rows=count, out_path=OUTPUT_FILE)
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_WEIGHTS_DIR, use_fast=True)
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_WEIGHTS_DIR, use_fast=True, local_files_only=True)
     model = HookedTransformer.from_pretrained(MODEL_WEIGHTS_DIR, device="cuda", dtype=torch.bfloat16)
 
     capture_activations(state, tokenizer, model)
