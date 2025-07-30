@@ -12,7 +12,6 @@ from src.config import *
 # --- Config ---
 BATCH_SIZE = 8
 TARGET_HOOK = "blocks.12.mlp.hook_post"
-# MODEL_WEIGHTS_DIR = os.path.join(MODEL_STORAGE_DIR, SUBJECT_MODEL)
 # TARGET_HOOK = "blocks.8.attn.hook_z"
 OUTPUT_FILE = "layer12_post_acts.npy"
 INDEX_JSONL = "captured_index.jsonl"
@@ -28,9 +27,10 @@ class CaptureState:
 
 def save_hook(activations, hook, state: CaptureState):
     # [batch, seq, hidden_dim]  →  [batch, hidden_dim]
-    print(f"Raw activation shape: {activations.shape}")
+    # We get raw: [8, 27, 12288]
+    # After mean: [8, 12288]
+    # These are the intermediate activations, which, in Qwen3, are apparently captured before compression back to 4096 hidden size
     batch_vectors = activations.detach().cpu().mean(dim=1).float()
-    print(f"After mean: {batch_vectors.shape}")
     if state.buffer is None:
         # Convert torch dtype to numpy dtype
         numpy_dtype = np.float32 if activations.dtype == torch.bfloat16 else activations.detach().cpu().numpy().dtype
@@ -100,8 +100,10 @@ if __name__ == "__main__":
 
     print(f"Capturing activations for {TARGET_HOOK}...")
     state = CaptureState(total_rows=count, out_path=OUTPUT_FILE)
-    tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen3-8B", use_fast=True, trust_remote_code=True)
-    model = HookedTransformer.from_pretrained("Qwen/Qwen3-8B", device="cuda", trust_remote_code=True, dtype=torch.bfloat16)
+
+    # We use the qwen3 architecture, because our model is merely a distilled qwen3 and transformerLens mistakes this for an unsupported deepseek arch.
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_STORAGE_DIR + "/qwen3-8b-distilled", local_files_only=True, use_fast=True, trust_remote_code=True)
+    model = HookedTransformer.from_pretrained(MODEL_STORAGE_DIR + "/qwen3-8b-distilled", local_files_only=True, device="cuda", trust_remote_code=True, dtype=torch.bfloat16)
 
 
     capture_activations(state, tokenizer, model)
