@@ -1,11 +1,8 @@
-import os
 import json
-import sys
 import numpy as np
 import torch
-from safetensors import safe_open
 from tqdm import tqdm
-from transformer_lens import HookedTransformer, HookedTransformerConfig
+from transformer_lens import HookedTransformer
 from transformers import AutoTokenizer
 from src.config import *
 
@@ -101,9 +98,8 @@ if __name__ == "__main__":
     print(f"Capturing activations for {TARGET_HOOK}...")
     state = CaptureState(total_rows=count, out_path=OUTPUT_FILE)
 
-    # We use the qwen3 architecture, because our model is merely a distilled qwen3 and transformerLens mistakes this for an unsupported deepseek arch.
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_STORAGE_DIR + "/qwen3-8b-distilled", local_files_only=True, use_fast=True, trust_remote_code=True)
-    model = HookedTransformer.from_pretrained(MODEL_STORAGE_DIR + "/qwen3-8b-distilled", local_files_only=True, device="cuda", trust_remote_code=True, dtype=torch.bfloat16)
+    tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen3-8B", use_fast=True, trust_remote_code=True)
+    model = HookedTransformer.from_pretrained("Qwen/Qwen3-8B", device="cuda", trust_remote_code=True, dtype=torch.bfloat16)
 
 
     capture_activations(state, tokenizer, model)
