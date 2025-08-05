@@ -6,8 +6,9 @@ from langchain_core.messages import HumanMessage
 from __common__ import *
 from src.config import *
 
-QUESTIONS_TO_GENERATE = 1000
-BATCH_SIZE = 20
+
+QUESTIONS_TO_GENERATE = 15
+BATCH_SIZE = 15
 SAMPLE_SIZE = 10
 
 
@@ -78,9 +79,9 @@ def store_results(questionnaire: Questionnaire):
         metadata = {
             "question": question.question,
             "subject": questionnaire.subject,
-            "thought": question.response.thought,
-            "response": question.response.response,
-            "response_embedding": question.response.response_embedding,
+            "thought": "",
+            "response": "",
+            "response_embedding": "",
             "censored": question.response.Evaluation.censored if hasattr(question.response.Evaluation, "censored") else False,
             "censorship_category": question.response.Evaluation.censorship_category if hasattr(question.response.Evaluation, "censorship_category") else "none",
             "timestamp": datetime.now().isoformat()
@@ -119,7 +120,6 @@ def retrieve_sample_questions() -> List[str]:
 def generate_question_embeddings(questions: List[Question]) -> None:
     for question in questions:
         question.embedding = embed.embed_query(question.question)
-
 
 
 def deduplicate_questions(questionnaire: Questionnaire) -> None:
@@ -162,7 +162,7 @@ def run():
 
         logging.info(f"Generating {n}-{n+BATCH_SIZE}/{QUESTIONS_TO_GENERATE} questions...")
         samples = retrieve_sample_questions()
-        questionnaire.questions = generate_questions(samples, exclude_common_topics=False)
+        questionnaire.questions = generate_questions(samples, exclude_common_topics=True)
 
         logging.info(f"Finished generating questions. Generating embeddings for questions...")
         generate_question_embeddings(questionnaire.questions)

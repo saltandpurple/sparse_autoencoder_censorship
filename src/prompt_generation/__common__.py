@@ -9,7 +9,7 @@ class Evaluation(BaseModel):
 class Response(BaseModel):
     response: str = ""
     thought: str = ""
-    response_embedding: List[float] = []
+    response_embedding: str = ""
     Evaluation: str = ""
 
 class Question(BaseModel):
