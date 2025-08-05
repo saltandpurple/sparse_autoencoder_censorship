@@ -21,16 +21,21 @@ def get_response_umap(df):
 def get_question_umap(df):
     return generate_question_umap(df)
 
-
 def get_ngrams_data(df):
     return get_distinctive_ngrams(df, n=10)
 
 
 def get_dataset_from_chromadb() -> pd.DataFrame:
     results = collection.get(
-        include=['documents', 'metadatas', 'embeddings']
+        include=['documents', 'metadatas', 'embeddings'],
+        where={
+            "$and": [
+                {"response": {"$ne": ""}},
+                {"response_embedding": {"$ne": ""}}
+            ]
+        }
     )
-    
+
     df = pd.DataFrame(results['metadatas'])
     # returns an array of shape [<NUM_QUESTIONS>, 1536]
     df['embeddings'] = [np.array(embedding) for embedding in results['embeddings']]
@@ -40,7 +45,6 @@ def get_dataset_from_chromadb() -> pd.DataFrame:
     ]
     df['documents'] = results['documents']
     return df
-
 def calculate_label_distribution(df: pd.DataFrame) -> Counter:
     return Counter(df['censorship_category'].tolist())
 
