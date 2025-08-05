@@ -1,13 +1,17 @@
 import generation
 from src.config import *
 from typing import List
+from datetime import datetime
 
+BATCH_SIZE = 5
 
-def retrieve_questions_for_interrogation() -> List[generation.Question]:
+def retrieve_unanswered_questions(count: int) -> List[generation.Question]:
     results = collection.get(
+        limit=count,
         where={
             "response": {"$eq": ""},
-        }
+        },
+        include=['metadatas', 'embeddings']
     )
 
     questions = []
@@ -15,7 +19,8 @@ def retrieve_questions_for_interrogation() -> List[generation.Question]:
         for metadata in results['metadatas']:
             question = generation.Question(
                 question=metadata['question'],
-                response=generation.Response()
+                response=generation.Response(),
+                id=results['ids'][0],
             )
             questions.append(question)
 
@@ -23,8 +28,26 @@ def retrieve_questions_for_interrogation() -> List[generation.Question]:
     return questions
 
 
+def update_results(questionnaire: generation.Questionnaire) -> None:
+    for question in questionnaire.questions:
+        metadata = {
+            "question": question.question,
+            "subject": questionnaire.subject,
+            "thought": question.response.thought,
+            "response": question.response.response,
+            "response_embedding": question.response.response_embedding,
+            "censored": question.response.Evaluation.censored if hasattr(question.response.Evaluation, "censored") else False,
+            "censorship_category": question.response.Evaluation.censorship_category if hasattr(question.response.Evaluation, "censorship_category") else "none",
+            "timestamp": datetime.now().isoformat()
+        }
+
+        collection.update(
+            ids=[question.id],
+            metadatas=[metadata]
+        )
+
 def run():
-    questions = retrieve_questions_for_interrogation()
+    questions = retrieve_unanswered_questions(BATCH_SIZE)
 
     questionnaire = generation.Questionnaire(
         questions=questions,
@@ -41,7 +64,7 @@ def run():
     generation.evaluate_responses(questionnaire.questions)
 
     logging.info("Storing results...")
-    generation.store_results(questionnaire)
+    update_results(questionnaire)
 
     logging.info("Interrogation process completed!")
 

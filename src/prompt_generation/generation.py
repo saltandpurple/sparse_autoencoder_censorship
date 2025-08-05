@@ -29,6 +29,7 @@ class Question(BaseModel):
     question: str
     response: Response
     embedding: List[float] = []
+    id: str = ""
 
 class Questionnaire(BaseModel):
     questions: List[Question]
