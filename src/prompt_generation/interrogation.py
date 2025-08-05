@@ -2,7 +2,6 @@ import json
 import time
 from langchain_core.messages import HumanMessage
 from src.config import *
-from typing import List
 from datetime import datetime
 from __common__ import *
 

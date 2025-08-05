@@ -1,15 +1,12 @@
-import time
-import json
 import random
 import pprint
-from typing import List
 from datetime import datetime
 from langchain_core.messages import HumanMessage
 
 from __common__ import *
 from src.config import *
 
-QUESTIONS_TO_GENERATE = 200
+QUESTIONS_TO_GENERATE = 1000
 BATCH_SIZE = 20
 SAMPLE_SIZE = 10
 
