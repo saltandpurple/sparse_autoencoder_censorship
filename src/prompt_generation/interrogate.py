@@ -16,11 +16,11 @@ def retrieve_unanswered_questions(count: int) -> List[generation.Question]:
 
     questions = []
     if results and results['metadatas']:
-        for metadata in results['metadatas']:
+        for i, metadata in enumerate(results['metadatas']):
             question = generation.Question(
                 question=metadata['question'],
                 response=generation.Response(),
-                id=results['ids'][0],
+                id=results['ids'][i],
             )
             questions.append(question)
 
