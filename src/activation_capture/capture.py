@@ -31,13 +31,13 @@ print(f"{COLLECTION_NAME}-collection contains {TOTAL_ROWS} censored prompts")
 
 # 2. load model & tokenizer
 # TFL doesn't support custom distills like the Deepseek one, so we use the underlying model arch (Qwen3) to fool the validation
-config = AutoConfig.from_pretrained(MODEL_ALIAS, trust_remote_code=True).to_dict()
-config["model_name"] = MODEL_ALIAS
+config = AutoConfig.from_pretrained(MODEL_ALIAS, trust_remote_code=True)
+config.model_name = MODEL_ALIAS
 
 model = HookedTransformer.from_pretrained(
     MODEL_ALIAS,
-    hf_model_or_path=MODEL_PATH,
-    config=config,
+    hf_model=MODEL_PATH,
+    hf_cfg=config,
     device="cuda",
     dtype=torch.bfloat16,
     tokenizer_kwargs={"trust_remote_code": True},
