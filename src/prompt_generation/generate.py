@@ -7,7 +7,7 @@ from __common__ import *
 from src.config import *
 
 
-QUESTIONS_TO_GENERATE = 15
+QUESTIONS_TO_GENERATE = 1500
 BATCH_SIZE = 15
 SAMPLE_SIZE = 10
 
