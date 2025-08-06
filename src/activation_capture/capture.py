@@ -64,9 +64,7 @@ def main():
     )
     write_pointer = 0
 
-    activations_mm.flush()
-    assert write_pointer == TOTAL_ROWS, f"Expected {TOTAL_ROWS}, wrote {write_pointer}"
-    print(f"Activation capture completed. {write_pointer} rows -> {ACTIVATION_PATH} (Index -> {INDEX_PATH})")
+
 
     # 4. hook for activation storage
     def save_hook(activations, hook):
@@ -101,6 +99,10 @@ def main():
                 # write to index file for referencing by SAE later
                 for i, prompt in enumerate(current_batch):
                     index_file.write(json.dumps({"row": batch_start + i, "prompt": prompt}) +"\n")
+
+    activations_mm.flush()
+    assert write_pointer == TOTAL_ROWS, f"Expected {TOTAL_ROWS}, wrote {write_pointer}"
+    print(f"Activation capture completed. {write_pointer} rows -> {ACTIVATION_PATH} (Index -> {INDEX_PATH})")
 
 
 if __name__ == "__main__":
