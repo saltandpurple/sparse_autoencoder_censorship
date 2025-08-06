@@ -52,7 +52,7 @@ hooked_model = HookedTransformer.from_pretrained(
 
 tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, trust_remote_code=True)
 
-HIDDEN_DIM = model.config.d_mlp  # 12.288 for Qwen3
+HIDDEN_DIM = model.cfg.d_mlp  # 12.288 for Qwen3
 print(model.cfg.model_name, model.cfg.d_mlp, model.cfg.n_layers) # qwen3-8B  12288  32
 
 # 3. pre-allocate memmap
