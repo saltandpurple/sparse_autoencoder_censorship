@@ -78,7 +78,7 @@ with torch.no_grad(), model.hooks([(TARGET_HOOK, save_hook)]):
         for batch_start in tqdm(range(0, TOTAL_ROWS, BATCH_SIZE)):
             current_batch = [metadata["question"]
                              for metadata
-                             in prompts[batch_start: batch_start + BATCH_SIZE]["metadatas"]]
+                             in prompts["metadatas"][batch_start: batch_start + BATCH_SIZE]]
             tokens = tokenizer(
                 current_batch,
                 return_tensors="pt",
@@ -90,7 +90,7 @@ with torch.no_grad(), model.hooks([(TARGET_HOOK, save_hook)]):
             _ = model(tokens["input_ids"])
 
             # write to index file for referencing by SAE later
-            for i, prompt in enumerate(prompts):
+            for i, prompt in enumerate(current_batch):
                 index_file.write(json.dumps({"row": batch_start + i, "prompt": prompt}) +"\n")
 
 activations_mm.flush()
