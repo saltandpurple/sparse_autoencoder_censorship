@@ -31,19 +31,15 @@ print(f"{COLLECTION_NAME}-collection contains {TOTAL_ROWS} censored prompts")
 
 # 2. load model & tokenizer
 # TFL doesn't support custom distills like the Deepseek one, so we use the underlying model arch (Qwen3) to fool the validation
-# config = AutoConfig.from_pretrained(MODEL_ALIAS, trust_remote_code=True)
-# config.model_name = MODEL_ALIAS
-
-model = AutoModelForCausalLM.from_pretrained(
+hf_model = AutoModelForCausalLM.from_pretrained(
     MODEL_PATH,
     trust_remote_code=True,
     torch_dtype="bfloat16"
 )
 
-hooked_model = HookedTransformer.from_pretrained(
+model = HookedTransformer.from_pretrained(
     MODEL_ALIAS,
-    hf_model=model,
-    # hf_cfg=config,
+    hf_model=hf_model,
     device="cuda",
     dtype=torch.bfloat16,
     tokenizer_kwargs={"trust_remote_code": True},
@@ -53,7 +49,7 @@ hooked_model = HookedTransformer.from_pretrained(
 tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, trust_remote_code=True)
 
 HIDDEN_DIM = model.cfg.d_mlp  # 12.288 for Qwen3
-print(model.cfg.model_name, model.cfg.d_mlp, model.cfg.n_layers) # qwen3-8B  12288  32
+print(f"Model name: {model.cfg.model_name}\nModel hidden dim: {model.cfg.d_mlp}\nModel layers: {model.cfg.n_layers}\n") # qwen3-8B  12288  32
 
 # 3. pre-allocate memmap
 activations_mm = np.memmap(
@@ -80,7 +76,7 @@ def save_hook(activations, hook):
 
 
 # 5. run inference and capture activations
-with torch.no_grad(), hooked_model.hooks([(TARGET_HOOK, save_hook)]):
+with torch.no_grad(), model.hooks([(TARGET_HOOK, save_hook)]):
     with open(INDEX_PATH, "w") as index_file:
         for batch_start in tqdm(range(0, TOTAL_ROWS, BATCH_SIZE)):
             current_batch = [metadata["question"]
@@ -94,7 +90,7 @@ with torch.no_grad(), hooked_model.hooks([(TARGET_HOOK, save_hook)]):
                 max_length=512,
             ).to("cuda")
 
-            _ = hooked_model(tokens["input_ids"])
+            _ = model(tokens["input_ids"])
 
             # write to index file for referencing by SAE later
             for i, prompt in enumerate(current_batch):
