@@ -26,7 +26,7 @@ prompts = collection.get(
     },
     include=["metadatas", "documents"]
 )
-TOTAL_ROWS = len(prompts)
+TOTAL_ROWS = len(prompts["metadatas"])
 print(f"{COLLECTION_NAME}-collection contains {TOTAL_ROWS} censored prompts")
 
 # 2. load model & tokenizer
@@ -49,7 +49,10 @@ model = HookedTransformer.from_pretrained(
 tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, trust_remote_code=True)
 
 HIDDEN_DIM = model.cfg.d_mlp  # 12.288 for Qwen3
-print(f"Model name: {model.cfg.model_name}\nModel hidden dim: {model.cfg.d_mlp}\nModel layers: {model.cfg.n_layers}\n") # qwen3-8B  12288  32
+# Should yield: qwen3-8B  12288  36
+print(f"Model name: {model.cfg.model_name}\n"
+      f"Model hidden dim: {model.cfg.d_mlp}\n"
+      f"Model layers: {model.cfg.n_layers}\n")
 
 # 3. pre-allocate memmap
 activations_mm = np.memmap(
