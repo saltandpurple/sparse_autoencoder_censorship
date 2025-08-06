@@ -68,7 +68,7 @@ def main():
 
     # 4. hook for activation storage
     def save_hook(activations, hook):
-        global write_pointer
+        nonlocal write_pointer
         # [batch, seq, hidden_dim]  →  [batch, hidden_dim]
         # We get raw: [8, 27, 12288]
         # After mean: [8, 12288]
