@@ -1,125 +1,98 @@
+import os
 import json
 import numpy as np
 import torch
 from tqdm import tqdm
+from transformers import AutoTokenizer, AutoConfig
 from transformer_lens import HookedTransformer
 from transformer_lens.utils import get_act_name
-from transformers import AutoTokenizer, AutoConfig
 from src.config import *
 
 # --- Config ---
+LAYER = 12
 BATCH_SIZE = 8
-TARGET_HOOK = get_act_name("post", layer=12)  # == "blocks.12.mlp.hook_post"
-# TARGET_HOOK = "blocks.8.attn.hook_z"
-OUTPUT_FILE = "layer12_post_acts.npy"
-INDEX_JSONL = "captured_index.jsonl"
-MODEL_PATH = os.getenv("MODEL_STORAGE_DIR") + SUBJECT_MODEL
+MAX_SEQ = 512
+TARGET_HOOK = get_act_name("post", layer=LAYER)  # "blocks.12.mlp.hook_post"
+ACTIVATION_PATH = f"layer{LAYER:02d}_post.f16"
+INDEX_PATH = "captured_index.jsonl"
+MODEL_PATH = os.getenv("MODEL_STORAGE_DIR", "") + SUBJECT_MODEL
 MODEL_ALIAS = "Qwen/Qwen3-8B"
-
-
 # --------------
 
-class CaptureState:
-    def __init__(self, total_rows, out_path):
-        self.total_rows = total_rows
-        self.out_path = out_path
-        self.write_idx = 0
-        self.buffer = None  # allocate memmapped array lazily after first forward (dims unknown until then)
+# 1. aggregate prompt list
+prompts = collection.get(
+    where={
+        "censored": {"$eq": True},
+    },
+    include=["metadatas", "documents"]
+)
+TOTAL_ROWS = len(prompts)
+print(f"{COLLECTION_NAME}-collection contains {TOTAL_ROWS} censored prompts")
+
+# 2. load model & tokenizer
+# TFL doesn't support custom distills like the Deepseek one, so we use the underlying model arch (Qwen3) to fool the validation
+config = AutoConfig.from_pretrained(MODEL_ALIAS, trust_remote_code=True).to_dict()
+config["model_name"] = MODEL_ALIAS
+
+model = HookedTransformer.from_pretrained(
+    MODEL_ALIAS,
+    hf_model_or_path=MODEL_PATH,
+    config=config,
+    device="cuda",
+    dtype=torch.bfloat16,
+    tokenizer_kwargs={"trust_remote_code": True},
+    hf_model_kwargs={"trust_remote_code": True}
+)
+
+tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, trust_remote_code=True)
+
+HIDDEN_DIM = model.config.d_mlp  # 12.288 for Qwen3
+
+# 3. pre-allocate memmap
+activations_mm = np.memmap(
+    ACTIVATION_PATH,
+    mode="w+",
+    dtype="float16",
+    shape=(TOTAL_ROWS, HIDDEN_DIM)
+)
+write_pointer = 0
 
 
-def save_hook(activations, hook, state: CaptureState):
+# 4. hook for activation storage
+def save_hook(activations, hook):
+    nonlocal write_pointer
     # [batch, seq, hidden_dim]  →  [batch, hidden_dim]
     # We get raw: [8, 27, 12288]
     # After mean: [8, 12288]
     # These are the intermediate activations, which, in Qwen3, are apparently captured before compression back to 4096 hidden size
-    batch_vectors = activations.detach().cpu().mean(dim=1).float()
-    if state.buffer is None:
-        # Convert torch dtype to numpy dtype
-        numpy_dtype = np.float32 if activations.dtype == torch.bfloat16 else activations.detach().cpu().numpy().dtype
-        state.buffer = np.memmap(
-            state.out_path,
-            dtype=numpy_dtype,
-            mode="w+",
-            shape=(state.total_rows, *batch_vectors.shape[1:])
-        )
-
-    n = batch_vectors.shape[0]
-    # Make sure we don't exceed the number of samples we have left
-    remaining_samples = state.total_rows - state.write_idx
-    n = min(n, remaining_samples)
-
-    state.buffer[state.write_idx: state.write_idx + n, :] = batch_vectors[:n].numpy()
-    state.buffer.flush()
-    state.write_idx += n
-
-# todo: refactor this
-def capture_activations(state: CaptureState, tokenizer: AutoTokenizer.from_pretrained, model: HookedTransformer.from_pretrained) -> None:
-    index_file = open(INDEX_JSONL, "w")
-
-    # create closure to capture state
-    def save_hook_closure(activations, hook):
-        return save_hook(activations, hook, state)
-
-    # iterate through stored questions in batches
-    for offset in tqdm(range(0, state.total_rows, BATCH_SIZE)):
-        start_idx = state.write_idx
-        current_batch = collection.get(limit=BATCH_SIZE,
-                                       offset=offset,
-                                       include=['metadatas']
-                                       )
-        prompts = [item["question"] for item in current_batch["metadatas"]]
-
-        # write mapping once per row for traceability
-        for i, prompt in enumerate(prompts):
-            index_file.write(json.dumps({"row": start_idx + i, "prompt": prompt}) + "\n")
-        index_file.flush()
-
-        tokens = tokenizer(prompts,
-                           return_tensors="pt",
-                           padding=True,
-                           truncation=True,
-                           max_length=512
-                           ).to("cuda")
-
-        # no gradient needed during inference, saves VRAM & compute
-        with torch.no_grad():
-            with model.hooks([(TARGET_HOOK, save_hook_closure)]):
-                _ = model(tokens['input_ids'])
-    index_file.close()
+    pooled = activations.mean(dim=1).float().cpu()
+    n = pooled.shape[0]
+    activations_mm[write_pointer:write_pointer + n] = pooled.numpy().astype("float16")
+    write_pointer += n
+    return activations
 
 
-if __name__ == "__main__":
-    # fetch ids for counting (nasty, but chromadb doesn't allow any count without fetching stuff)
-    censored_prompts = collection.get(
-        where={
-            "censored": {
-                "$eq": True
-            }
-        },
-        include=[]
-    )
-    count = len(censored_prompts["ids"])
-    print(f"Found {censored_prompts} censored prompts in Chroma collection “{COLLECTION_NAME}”")
-    print(f"Capturing activations for {TARGET_HOOK}...")
+# 5. run inference and capture activations
+with torch.no_grad(), model.hooks([(TARGET_HOOK, save_hook)]):
+    with open(INDEX_PATH, "w") as index_file:
+        for batch_start in tqdm(range(0, TOTAL_ROWS, BATCH_SIZE)):
+            current_batch = [metadata["question"]
+                             for metadata
+                             in prompts[batch_start: batch_start + BATCH_SIZE]["metadatas"]]
+            tokens = tokenizer(
+                current_batch,
+                return_tensors="pt",
+                padding=True,
+                truncation=True,
+                max_length=512,
+            ).to("cuda")
 
-    state = CaptureState(total_rows=count, out_path=OUTPUT_FILE)
+            _ = model(tokens["input_ids"])
 
-    # Load config based on alias because TFL does not support DeepSeek-distills out of the box.
-    # Since the architecture is Qwen3 (which is supported), we need to trick TFL into using that one.
-    config = AutoConfig.from_pretrained(MODEL_ALIAS, trust_remote_code=True).to_dict()
-    config["model_name"] = MODEL_ALIAS
+            # write to index file for referencing by SAE later
+            for i, prompt in enumerate(prompts):
+                index_file.write(json.dumps({"row": batch_start + i, "prompt": prompt}) +"\n")
 
-    model = HookedTransformer.from_pretrained(MODEL_ALIAS,
-                                              hf_model_name_or_path=MODEL_PATH,
-                                              config=config,
-                                              device="cuda",
-                                              dtype=torch.bfloat16,
-                                              tokenizer_kwargs={"trust_remote_code": True},
-                                              hf_model_kwargs={"trust_remote_code": True}
-                                              )
-
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, trust_remote_code=True)
-
-    capture_activations(state, tokenizer, model)
-
-    print(f"Done. Stored activations in {OUTPUT_FILE}, index in {INDEX_JSONL}")
+activations_mm.flush()
+assert write_pointer == TOTAL_ROWS, f"Expected {TOTAL_ROWS}, wrote {write_pointer}"
+print(f"Activation capture completed. {write_pointer} rows -> {ACTIVATION_PATH} (Index -> {INDEX_PATH})")
