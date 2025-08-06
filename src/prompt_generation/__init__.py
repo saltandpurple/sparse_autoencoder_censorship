@@ -1,1 +1,1 @@
-from . import generation, interrogation, reset
+from . import generate, interrogate, reset
