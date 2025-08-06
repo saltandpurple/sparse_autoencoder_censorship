@@ -3,7 +3,7 @@ import json
 import numpy as np
 import torch
 from tqdm import tqdm
-from transformers import AutoTokenizer, AutoConfig
+from transformers import AutoTokenizer, AutoConfig, AutoModelForCausalLM
 from transformer_lens import HookedTransformer
 from transformer_lens.utils import get_act_name
 from src.config import *
@@ -34,10 +34,16 @@ print(f"{COLLECTION_NAME}-collection contains {TOTAL_ROWS} censored prompts")
 config = AutoConfig.from_pretrained(MODEL_ALIAS, trust_remote_code=True)
 config.model_name = MODEL_ALIAS
 
+hf_model = AutoModelForCausalLM.from_pretrained(
+    MODEL_PATH,
+    trust_remote_code=True,
+    torch_dtype="bfloat16"
+)
+
 model = HookedTransformer.from_pretrained(
     MODEL_ALIAS,
-    hf_model=MODEL_PATH,
-    hf_cfg=config,
+    hf_model=hf_model,
+    # hf_cfg=config,
     device="cuda",
     dtype=torch.bfloat16,
     tokenizer_kwargs={"trust_remote_code": True},
