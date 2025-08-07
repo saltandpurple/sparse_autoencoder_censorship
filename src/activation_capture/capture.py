@@ -17,29 +17,64 @@ OUTPUT_FILE = "layer12_post_acts.npy"
 INDEX_JSONL = "captured_index.jsonl"
 # --------------
 
-class CaptureState:
-    def __init__(self, total_rows, out_path):
-        self.total_rows = total_rows
-        self.out_path = out_path
-        self.write_idx = 0
-        self.buffer = None # allocate memmapped array lazily after first forward (dims unknown until then)
+def main():
+    # 1. aggregate prompt list
+    prompts = collection.get(
+        where={
+            "censored": {"$eq": True},
+        },
+        include=["metadatas", "documents"]
+    )
+    TOTAL_ROWS = len(prompts["metadatas"])
+    print(f"{COLLECTION_NAME}-collection contains {TOTAL_ROWS} censored prompts")
 
+    # 2. load model & tokenizer
+    # TFL doesn't support custom distills like the Deepseek one, so we use the underlying model arch (Qwen3) to fool the validation
+    hf_model = AutoModelForCausalLM.from_pretrained_no_processing(
+        MODEL_PATH,
+        trust_remote_code=True,
+        torch_dtype="bfloat16"
+    )
 
-def save_hook(activations, hook, state: CaptureState):
-    # [batch, seq, hidden_dim]  →  [batch, hidden_dim]
-    batch_vectors = activations.detach().cpu().mean(dim=1).float()
-    if state.buffer is None:
-        state.buffer = np.memmap(
-            state.out_path,
-            dtype=activations.dtype,
-            mode="w+",
-            shape=(state.total_rows, *activations.shape[1:])
-        )
+    model = HookedTransformer.from_pretrained(
+        MODEL_ALIAS,
+        hf_model=hf_model,
+        device="cuda",
+        dtype=torch.bfloat16,
+        tokenizer_kwargs={"trust_remote_code": True},
+        hf_model_kwargs={"trust_remote_code": True}
+    )
 
-    n = batch_vectors.shape[0]
-    state.buffer[state.write_idx : state.write_idx + n, :] = batch_vectors
-    state.buffer.flush()
-    state.write_idx += n
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, trust_remote_code=True)
+
+    HIDDEN_DIM = model.cfg.d_mlp  # 12.288 for Qwen3
+    # Should yield: qwen3-8B  12288  36
+    print(f"Model name: {model.cfg.model_name}\n"
+          f"Model hidden dim: {model.cfg.d_mlp}\n"
+          f"Model layers: {model.cfg.n_layers}\n")
+
+    # 3. pre-allocate memmap
+    activations_mm = np.memmap(
+        ACTIVATION_PATH,
+        mode="w+",
+        dtype="float16",
+        shape=(TOTAL_ROWS, HIDDEN_DIM)
+    )
+    write_pointer = 0
+
+    # 4. hook for activation storage
+    def save_hook(activations, hook):
+        nonlocal write_pointer
+        # [batch, seq, hidden_dim]  →  [batch, hidden_dim]
+        # We get raw: [8, 27, 12288]
+        # After mean: [8, 12288]
+        # These are the intermediate activations, which, in Qwen3, are apparently captured before compression back to 4096 hidden size
+        pooled = activations.mean(dim=1).float().cpu()
+        n = pooled.shape[0]
+        activations_mm[write_pointer:write_pointer + n] = pooled.numpy().astype("float16")
+        write_pointer += n
+        return activations
+>>>>>>> Stashed changes
 
 
 def capture_activations(state: CaptureState, tokenizer: AutoTokenizer.from_pretrained, model: HookedTransformer.from_pretrained) -> None:

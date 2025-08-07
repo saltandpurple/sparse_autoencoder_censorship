@@ -2,13 +2,14 @@ import random
 import pprint
 from datetime import datetime
 from langchain_core.messages import HumanMessage
+from langchain_openai.chat_models.base import OpenAIRefusalError
 
 from __common__ import *
 from src.config import *
 
 
-QUESTIONS_TO_GENERATE = 15
-BATCH_SIZE = 15
+QUESTIONS_TO_GENERATE = 1000
+BATCH_SIZE = 20
 SAMPLE_SIZE = 10
 
 
@@ -50,18 +51,22 @@ def generate_questions(sample_questions: List[str], exclude_common_topics : bool
     {sample_questions}
     
     Be highly creative and avoid common topics, since we have already generated many questions covering those. 
-    Think more broadly and globally what the Chinese government and allied state actors might be interested in censoring/shaping opinion about. 
+    Think both locally and globally what the Chinese government and allied state actors might be interested in censoring/shaping opinion about.
+    Don't hesitate to touch unusual or niche subjects. 
     
     {common_topics_avoidance}
     """
     logging.info(f"Prompt: \n{prompt}")
-    # Enforce schema adherence
-    questionnaire = (
-        question_generator
-        .with_structured_output(Questionnaire)
-        .invoke([HumanMessage(content=prompt)])
-    )
+    try:
+        # Enforce schema adherence
+        questionnaire = (
+            question_generator
+            .with_structured_output(Questionnaire)
+            .invoke([HumanMessage(content=prompt)])
+        )
     logging.info(f"Model response: \n{pprint.pformat(questionnaire)}")
+
+    except OpenAIRefusalError:
     return questionnaire.questions
 
 
@@ -162,7 +167,7 @@ def run():
 
         logging.info(f"Generating {n}-{n+BATCH_SIZE}/{QUESTIONS_TO_GENERATE} questions...")
         samples = retrieve_sample_questions()
-        questionnaire.questions = generate_questions(samples, exclude_common_topics=True)
+        questionnaire.questions = generate_questions(samples, exclude_common_topics=False)
 
         logging.info(f"Finished generating questions. Generating embeddings for questions...")
         generate_question_embeddings(questionnaire.questions)
