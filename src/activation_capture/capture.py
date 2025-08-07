@@ -32,7 +32,7 @@ def main():
 
     # 2. load model & tokenizer
     # TFL doesn't support custom distills like the Deepseek one, so we use the underlying model arch (Qwen3) to fool the validation
-    hf_model = AutoModelForCausalLM.from_pretrained(
+    hf_model = AutoModelForCausalLM.from_pretrained_no_processing(
         MODEL_PATH,
         trust_remote_code=True,
         torch_dtype="bfloat16"

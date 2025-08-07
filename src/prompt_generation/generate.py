@@ -2,6 +2,7 @@ import random
 import pprint
 from datetime import datetime
 from langchain_core.messages import HumanMessage
+from langchain_openai.chat_models.base import OpenAIRefusalError
 
 from __common__ import *
 from src.config import *
@@ -56,15 +57,20 @@ def generate_questions(sample_questions: List[str], exclude_common_topics : bool
     {common_topics_avoidance}
     """
     logging.info(f"Prompt: \n{prompt}")
-    # Enforce schema adherence
-    questionnaire = (
-        question_generator
-        .with_structured_output(Questionnaire)
-        .invoke([HumanMessage(content=prompt)])
-    )
-    logging.info(f"Model response: \n{pprint.pformat(questionnaire)}")
-    return questionnaire.questions
+    while True:
+        try:
+            # Enforce schema adherence
+            questionnaire = (
+                question_generator
+                .with_structured_output(Questionnaire)
+                .invoke([HumanMessage(content=prompt)])
+            )
+            logging.info(f"Model response: \n{pprint.pformat(questionnaire)}")
+            break
+        except OpenAIRefusalError as e:
+            logging.error(f"OpenAI API refused to respond because they suck. Bullshit reason provided: {e}")
 
+    return questionnaire.questions
 
 
 def store_results(questionnaire: Questionnaire):
@@ -163,7 +169,7 @@ def run():
 
         logging.info(f"Generating {n}-{n+BATCH_SIZE}/{QUESTIONS_TO_GENERATE} questions...")
         samples = retrieve_sample_questions()
-        questionnaire.questions = generate_questions(samples, exclude_common_topics=False)
+        questionnaire.questions = generate_questions(samples, exclude_common_topics=True)
 
         logging.info(f"Finished generating questions. Generating embeddings for questions...")
         generate_question_embeddings(questionnaire.questions)
