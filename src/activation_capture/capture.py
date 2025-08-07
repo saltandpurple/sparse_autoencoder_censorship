@@ -32,13 +32,13 @@ def main():
 
     # 2. load model & tokenizer
     # TFL doesn't support custom distills like the Deepseek one, so we use the underlying model arch (Qwen3) to fool the validation
-    hf_model = AutoModelForCausalLM.from_pretrained_no_processing(
+    hf_model = AutoModelForCausalLM.from_pretrained(
         MODEL_PATH,
         trust_remote_code=True,
         torch_dtype="bfloat16"
     )
 
-    model = HookedTransformer.from_pretrained(
+    model = HookedTransformer.from_pretrained_no_processing(
         MODEL_ALIAS,
         hf_model=hf_model,
         device="cuda",
@@ -50,7 +50,9 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, trust_remote_code=True)
 
     HIDDEN_DIM = model.cfg.d_mlp  # 12.288 for Qwen3
+    # VALIDATION - CORRECT MODEL LOADED
     # Should yield: qwen3-8B  12288  36
+    print(f"Shape Layer 36: {model.blocks[35].mlp.W_in.shape}")
     print(f"Model name: {model.cfg.model_name}\n"
           f"Model hidden dim: {model.cfg.d_mlp}\n"
           f"Model layers: {model.cfg.n_layers}\n")

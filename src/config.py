@@ -15,7 +15,7 @@ COLLECTION_NAME= "mapping_censorship_questions"
 TEXT_EMBEDDING_MODEL= "text-embedding-3-small"
 SUBJECT_MODEL = "deepseek-r1-0528-qwen3-8b"
 # GENERATOR_MODEL = "gpt-4.1-mini"
-GENERATOR_MODEL = "o3-mini"
+GENERATOR_MODEL = "o4-mini"
 EVALUATOR_MODEL = "gpt-4.1-mini"
 # EVALUATOR_MODEL = "o4-mini"
 
