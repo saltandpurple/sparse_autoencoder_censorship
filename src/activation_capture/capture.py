@@ -13,16 +13,20 @@ from src.config import *
 # --- Config ---
 LAYER = 12
 BATCH_SIZE = 8
-MAX_SEQ = 512
+MAX_SEQUENCE_LENGTH = 512
+MODEL_NUM_LAYERS = 36
 TARGET_ROWS = 20_000
 RATIO_NEG_TO_POS = 9
 TARGET_HOOK = get_act_name("post", layer=LAYER)  # "blocks.12.mlp.hook_post"
 ACTIVATIONS_PATH = f"layer{LAYER:02d}_post.f16"
 INDEX_PATH = "captured_index.jsonl"
-MODEL_PATH = os.getenv("MODEL_STORAGE_DIR", "") + SUBJECT_MODEL
+MODEL_PATH = os.path.join(os.getenv("MODEL_STORAGE_DIR", ""), SUBJECT_MODEL)
 MODEL_ALIAS = "Qwen/Qwen3-8B"
 # --------------
 
+# todos:
+# 1. masked pooling
+#
 
 def main():
 
@@ -78,10 +82,10 @@ def main():
 
     # 3. pre-allocate memmap
     HIDDEN_DIM = model.cfg.d_mlp  # 12.288 for Qwen3
-    # VALIDATION IF CORRECT MODEL LOADED
-    # First should yield 12288 (but more importantly just not error out)
+    # Validation for correct model weights
+    # First should yield "torch.Size([4096, 12288])" (but more importantly just not error out)
     # Should yield: qwen3-8B  12288  36
-    print(f"Shape Layer 36: {model.blocks[35].mlp.W_in.shape}")
+    print(f"Shape Layer {MODEL_NUM_LAYERS}: {model.blocks[MODEL_NUM_LAYERS - 1].mlp.W_in.shape}")
     print(f"Model name: {model.cfg.model_name}\n"
           f"Model hidden dim: {model.cfg.d_mlp}\n"
           f"Model layers: {model.cfg.n_layers}\n")
@@ -119,7 +123,7 @@ def main():
                 return_tensors="pt",
                 padding=True,
                 truncation=True,
-                max_length=512,
+                max_length=MAX_SEQUENCE_LENGTH,
             ).to("cuda")
 
             _ = model(tokens["input_ids"])
