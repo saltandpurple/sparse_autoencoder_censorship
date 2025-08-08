@@ -14,7 +14,7 @@ from src.config import *
 LAYER = 12
 BATCH_SIZE = 8
 MAX_SEQ = 512
-TARGET_ROWS = 200_000
+TARGET_ROWS = 20_000
 RATIO_NEG_TO_POS = 9
 TARGET_HOOK = get_act_name("post", layer=LAYER)  # "blocks.12.mlp.hook_post"
 ACTIVATIONS_PATH = f"layer{LAYER:02d}_post.f16"
@@ -31,6 +31,7 @@ def main():
     background_ds = load_dataset("cerebras/SlimPajama-627B", split="train", streaming=True).shuffle(buffer_size=50000, seed=42)
 
     # load everything from chroma (plenty of RAM on my machine, stream if your machine's short)
+    print(f"Downloading collection of censored prompts...")
     positive_collection = collection.get(
         where={
             "censored": {"$eq": True},
@@ -39,7 +40,7 @@ def main():
     )
     positive_rows = len(positive_collection["metadatas"])
     positive_ds = [element["question"] for element in positive_collection["metadatas"]]
-    print(f"{COLLECTION_NAME}-collection contains {positive_rows} censored prompts")
+    print(f"Download completed. {COLLECTION_NAME}-collection contains {positive_rows} censored prompts")
 
     # Is this really an iterator? Or rather a generator?
     def pairs_iter(batch_size):
@@ -58,7 +59,6 @@ def main():
     # TFL doesn't support custom distills like the Deepseek one, so we use the underlying model arch (Qwen3) to fool the validation
     hf_model = AutoModelForCausalLM.from_pretrained(
         MODEL_PATH,
-        trust_remote_code=True,
         torch_dtype="bfloat16"
     )
 
@@ -122,8 +122,8 @@ def main():
                 max_length=512,
             ).to("cuda")
 
-            # _ = model(tokens["input_ids"])
-            _ = model(**tokens)
+            _ = model(tokens["input_ids"])
+            # _ = model(**tokens)
 
             # write to index for referencing by SAE later
             row_base = write_pointer - len(batch)
