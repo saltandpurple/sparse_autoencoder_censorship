@@ -24,10 +24,6 @@ MODEL_PATH = os.path.join(os.getenv("MODEL_STORAGE_DIR", ""), SUBJECT_MODEL)
 MODEL_ALIAS = "Qwen/Qwen3-8B"
 # --------------
 
-# todos:
-# 1. masked pooling
-#
-
 def main():
 
     # 1. prepare datasets
