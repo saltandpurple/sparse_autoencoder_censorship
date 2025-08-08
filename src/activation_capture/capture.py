@@ -46,7 +46,7 @@ def main():
         background_iter = iter(background_ds)
         while True:
             # one positive for every 9 negative
-            positive = random.choice(positive_ds, batch_size)
+            positive = random.choices(population=positive_ds, k=batch_size)
             yield positive, "positive"
             for _ in range(RATIO_NEG_TO_POS):
                 prompts = list(itertools.islice(background_iter, batch_size))
@@ -122,12 +122,14 @@ def main():
                 max_length=512,
             ).to("cuda")
 
-            _ = model(tokens["input_ids"])
+            # _ = model(tokens["input_ids"])
+            _ = model(**tokens)
 
             # write to index for referencing by SAE later
+            row_base = write_pointer - len(batch)
             for i, prompt in enumerate(batch):
                 index_lines.append(json.dumps({
-                    "row": write_pointer - BATCH_SIZE + i, # ensure we don't drift in case of incomplete batches
+                    "row": row_base + i, # ensure we don't drift in case of partial batches
                     "prompt": prompt,
                     "label": label
                 }) + "\n")
@@ -135,7 +137,7 @@ def main():
 
     # 6. validate, then write activations & index to disk
     assert write_pointer == TARGET_ROWS, f"Expected {TARGET_ROWS}, wrote {write_pointer}"
-    np.save(ACTIVATIONS_PATH, activations_ram)
+    activations_ram.tofile(ACTIVATIONS_PATH)
     with open(INDEX_PATH, "w") as file:
         file.writelines(index_lines)
     print(f"Activation capture completed. {write_pointer} rows -> {ACTIVATIONS_PATH} (Index -> {INDEX_PATH})")
