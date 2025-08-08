@@ -15,6 +15,7 @@ LAYER = 12
 BATCH_SIZE = 8
 MAX_SEQ = 512
 TARGET_ROWS = 200_000
+RATIO_NEG_TO_POS = 9
 TARGET_HOOK = get_act_name("post", layer=LAYER)  # "blocks.12.mlp.hook_post"
 ACTIVATIONS_PATH = f"layer{LAYER:02d}_post.f16"
 INDEX_PATH = "captured_index.jsonl"
@@ -22,10 +23,11 @@ MODEL_PATH = os.getenv("MODEL_STORAGE_DIR", "") + SUBJECT_MODEL
 MODEL_ALIAS = "Qwen/Qwen3-8B"
 # --------------
 
+
 def main():
 
     # 1. prepare datasets
-    # We use slim_pajama as a background/negative ds
+    # I use slim_pajama as a background/negative ds
     background_ds = load_dataset("cerebras/SlimPajama-627B", split="train", streaming=True).shuffle(buffer_size=50000, seed=42)
 
     # load everything from chroma (plenty of RAM on my machine, stream if your machine's short)
@@ -39,16 +41,18 @@ def main():
     positive_ds = [element["question"] for element in positive_collection["metadatas"]]
     print(f"{COLLECTION_NAME}-collection contains {positive_rows} censored prompts")
 
-    def pairs_iter(tokenizer, batch_size):
+    # Is this really an iterator? Or rather a generator?
+    def pairs_iter(batch_size):
         background_iter = iter(background_ds)
         while True:
             # one positive for every 9 negative
-            positive = random.sample(positive_ds, batch_size)
+            positive = random.choice(positive_ds, batch_size)
             yield positive, "positive"
             for _ in range(RATIO_NEG_TO_POS):
                 prompts = list(itertools.islice(background_iter, batch_size))
                 if not prompts: return
                 yield [prompt["text"] for prompt in prompts], "background"
+
 
     # 2. load model & tokenizer
     # TFL doesn't support custom distills like the Deepseek one, so we use the underlying model arch (Qwen3) to fool the validation
@@ -66,9 +70,10 @@ def main():
         # tokenizer_kwargs={"trust_remote_code": True},
         # hf_model_kwargs={"trust_remote_code": True}
     )
+    model.cfg.model_name = "deepseek-r1-0528-qwen3-8b"
 
     tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, trust_remote_code=True)
-    pairs_iterator = pairs_iter(tokenizer, BATCH_SIZE)
+    pairs_iterator = pairs_iter(BATCH_SIZE)
 
 
     # 3. pre-allocate memmap
@@ -95,6 +100,8 @@ def main():
         # These are the intermediate activations, which, in Qwen3, are captured before compression back to 4096 hidden size
         pooled = activations.mean(dim=1).float().cpu()
         n = pooled.shape[0]
+        if write_pointer + n > TARGET_ROWS:
+            raise RuntimeError("Activation Buffer exhausted. Raise TARGET_ROWS")
         activations_ram[write_pointer:write_pointer + n] = pooled.numpy().astype("float16")
         write_pointer += n
         return activations
@@ -103,7 +110,10 @@ def main():
     # 5. run inference and capture activations
     with torch.no_grad(), model.hooks([(TARGET_HOOK, save_hook)]):
         for batch_start in tqdm(range(0, TARGET_ROWS, BATCH_SIZE)):
-            batch, label = next(pairs_iterator)
+            try:
+                batch, label = next(pairs_iterator)
+            except StopIteration:
+                break # just in case the iter is empty before we're done
             tokens = tokenizer(
                 batch,
                 return_tensors="pt",
@@ -117,14 +127,17 @@ def main():
             # write to index for referencing by SAE later
             for i, prompt in enumerate(batch):
                 index_lines.append(json.dumps({
-                    "row": batch_start + i,
+                    "row": write_pointer - BATCH_SIZE + i, # ensure we don't drift in case of incomplete batches
                     "prompt": prompt,
                     "label": label
                 }) + "\n")
 
-# todo: properly implement storage of activations + index
-    activations_mm.flush()
-    assert write_pointer == positive_rows, f"Expected {positive_rows}, wrote {write_pointer}"
+
+    # 6. validate, then write activations & index to disk
+    assert write_pointer == TARGET_ROWS, f"Expected {TARGET_ROWS}, wrote {write_pointer}"
+    np.save(ACTIVATIONS_PATH, activations_ram)
+    with open(INDEX_PATH, "w") as file:
+        file.writelines(index_lines)
     print(f"Activation capture completed. {write_pointer} rows -> {ACTIVATIONS_PATH} (Index -> {INDEX_PATH})")
 
 
