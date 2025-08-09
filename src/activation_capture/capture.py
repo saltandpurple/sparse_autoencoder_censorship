@@ -15,7 +15,7 @@ LAYER = 12
 BATCH_SIZE = 8
 MAX_SEQUENCE_LENGTH = 512
 MODEL_NUM_LAYERS = 36
-TARGET_ROWS = 20_000
+TARGET_ROWS = 10_000
 RATIO_NEG_TO_POS = 9
 TARGET_HOOK = get_act_name("post", layer=LAYER)  # "blocks.12.mlp.hook_post"
 ACTIVATIONS_PATH = f"layer{LAYER:02d}_post.f16"
@@ -86,19 +86,25 @@ def main():
           f"Model hidden dim: {model.cfg.d_mlp}\n"
           f"Model layers: {model.cfg.n_layers}\n")
 
-    # Store memmap in RAM for speed (128GB available on this machine - might OOM on yours, ~50GB!)
+    # Store memmap in RAM for speed (128GB available on this machine - might OOM on yours, ~50GB for 200k lines)
     activations_ram = np.empty((TARGET_ROWS, HIDDEN_DIM), dtype=np.float16)
     write_pointer = 0
     index_lines = []
-
+    seq_mask = None
 
     # 4. hook for activation storage
     def save_hook(activations, hook):
-        nonlocal write_pointer
-        # [batch, seq, hidden_dim] → [batch, hidden_dim]
-        # [8, 27, 12288] → [8, 12288]
-        # These are the intermediate activations, which, in Qwen3, are captured before compression back to 4096 hidden size
-        pooled = activations.mean(dim=1).float().cpu()
+        nonlocal write_pointer, seq_mask
+        # act4ivations: [batch, seq, dim_mlp]
+        # seq_mask: [batch, seq] with 1 for real tokens, 0 for padding
+        assert seq_mask.shape == activations.shape[:2], f"Shape mismatch between mask and activations. mask: {seq_mask.shape}\nactivations: {activations.shape[:2]}"
+        mask = seq_mask.unsqueeze(-1) # [batch, seq, 1] -> so we can broadcast to the three dimensions of activations
+        mask = mask.to(device=activations.device, dtype=activations.dtype)
+        num_real_tokens = mask.sum(dim=1).clamp(min=1) # count non-zero tokens in the sequence
+        # masked mean over the sequence: activations * mask zeroes out padded positions, sum(dim=1) sums up non-pad tokens, div by num_real_tokens averages
+        pooled = (activations * mask).sum(dim=1) / num_real_tokens
+        pooled = pooled.float().cpu()
+
         n = pooled.shape[0]
         if write_pointer + n > TARGET_ROWS:
             raise RuntimeError("Activation Buffer exhausted. Raise TARGET_ROWS")
@@ -122,8 +128,9 @@ def main():
                 max_length=MAX_SEQUENCE_LENGTH,
             ).to("cuda")
 
+            seq_mask = tokens["attention_mask"]
+
             _ = model(tokens["input_ids"])
-            # _ = model(**tokens)
 
             # write to index for referencing by SAE later
             row_base = write_pointer - len(batch)
