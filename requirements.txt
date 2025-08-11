@@ -24,5 +24,7 @@ tqdm
 numpy
 # chromadb
 
-# misc
+# misc for infra
 ruff
+nvitop
+pysocks
