@@ -26,3 +26,5 @@ numpy
 
 # misc
 ruff
+nvitop
+pysocks
