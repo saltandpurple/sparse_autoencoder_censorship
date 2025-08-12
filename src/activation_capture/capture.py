@@ -38,7 +38,8 @@ def main():
         where={
             "censored": {"$eq": True},
         },
-        include=["metadatas", "documents"]
+        include=["metadatas"],
+        limit=1000
     )
     positive_rows = len(positive_collection["metadatas"])
     positive_ds = [element["question"] for element in positive_collection["metadatas"]]
@@ -61,18 +62,20 @@ def main():
     # TFL doesn't support custom distills like the Deepseek one, so we use the underlying model arch (Qwen3) to fool the validation
     hf_model = AutoModelForCausalLM.from_pretrained(
         MODEL_PATH,
-        torch_dtype="bfloat16"
+        torch_dtype="bfloat16",
+        local_files_only=True
     )
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, trust_remote_code=True)
 
     model = HookedTransformer.from_pretrained_no_processing(
         MODEL_ALIAS,
         hf_model=hf_model,
+        tokenizer=tokenizer,
         device="cuda",
         dtype=torch.bfloat16
     )
     model.cfg.model_name = "deepseek-r1-0528-qwen3-8b"
 
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, trust_remote_code=True)
     pairs_iterator = pairs_iter(BATCH_SIZE)
 
 

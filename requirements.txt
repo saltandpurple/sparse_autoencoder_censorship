@@ -24,7 +24,7 @@ tqdm
 numpy
 # chromadb
 
-# misc
+# infrastructure, runpod
 ruff
 nvitop
-pysocks
+httpx[socks]
