@@ -23,7 +23,7 @@ transformer_lens
 sae-lens>=6.5.3
 tqdm
 numpy
-# chromadb
+wandb
 
 # infrastructure, runpod
 ruff

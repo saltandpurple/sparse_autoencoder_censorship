@@ -12,10 +12,9 @@ from src.config import *
 MODEL_HIDDEN_D = 12288
 TOTAL_TRAINING_STEPS = 200_000
 BATCH_SIZE = 4096       # bump to 8192–16384 if vram allows
-LR_WARM_UP_STEPS = 0
+NUM_CHECKPOINTS = 1
+LR_WARM_UP_STEPS = TOTAL_TRAINING_STEPS // 40  # 2.5% of training
 LR_DECAY_STEPS = TOTAL_TRAINING_STEPS // 5  # 20% of training
-L1_WARM_UP_STEPS = TOTAL_TRAINING_STEPS // 40  # 2.5% of training
-L1_COEFFICIENT = 0.01
 LAYER = 12
 SAE_DIMENSIONS = 512
 NUM_FEATURES = 2 # maybe bump to 4?
@@ -24,8 +23,8 @@ ACTIVATIONS_PATH = f"layer{LAYER:02d}_post.f16"
 # --------------
 
 cfg = LanguageModelSAERunnerConfig(
-    model_name=SUBJECT_MODEL,
-    hook_name="blocks.12.hook_mlp_out",
+    model_name="Qwen/Qwen3-8b", # required, fails otherwise
+    hook_name=TARGET_HOOK,
     use_cached_activations=True,
     cached_activations_path=ACTIVATIONS_PATH,
 
@@ -39,7 +38,7 @@ cfg = LanguageModelSAERunnerConfig(
     lr=5e-5,
     lr_warm_up_steps=LR_WARM_UP_STEPS,
     lr_decay_steps=LR_DECAY_STEPS,
-    train_batch_size_tokens=BATCH_SIZE,
+    train_batch_size_tokens=BATCH_SIZE, # actually rows per step with cached activations
 
     # WANDB
     logger=LoggingConfig(
@@ -52,7 +51,7 @@ cfg = LanguageModelSAERunnerConfig(
     # Misc
     device="cuda",
     seed=42,
-    n_checkpoints=0,
+    n_checkpoints=NUM_CHECKPOINTS,
     checkpoint_path="checkpoints",
     dtype="float32"
 )
