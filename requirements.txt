@@ -18,9 +18,9 @@ altair
 streamlit
 umap-learn
 
-# sae-training & activation capture
+# activation capture
 transformer_lens
-sae_lens
+sae-lens>=6.5.3
 tqdm
 numpy
 # chromadb

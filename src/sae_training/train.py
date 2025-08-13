@@ -1,7 +1,7 @@
 from sae_lens import (
     LanguageModelSAERunnerConfig,
     LanguageModelSAETrainingRunner,
-    StandardTrainingSAEConfig,
+    TopKTrainingSAEConfig,
     LoggingConfig,
 )
 from transformer_lens.utils import get_act_name
@@ -9,13 +9,16 @@ from src.config import *
 
 
 # --- Config ---
-TOTAL_TRAINING_STEPS = 30_000
-BATCH_SIZE = 4096
-TOTAL_TRAINING_TOKENS = TOTAL_TRAINING_STEPS * BATCH_SIZE
+MODEL_HIDDEN_D = 12288
+TOTAL_TRAINING_STEPS = 200_000
+BATCH_SIZE = 4096 # todo: config
 LR_WARM_UP_STEPS = 0
 LR_DECAY_STEPS = TOTAL_TRAINING_STEPS // 5  # 20% of training
 L1_WARM_UP_STEPS = TOTAL_TRAINING_STEPS // 20  # 5% of training
+L1_COEFFICIENT = 0.01
 LAYER = 12
+SAE_DIMENSIONS = 512
+NUM_FEATURES = 2
 TARGET_HOOK = get_act_name("post", layer=LAYER)  # "blocks.12.mlp.hook_post"
 ACTIVATIONS_PATH = f"layer{LAYER:02d}_post.f16"
 # --------------
@@ -26,13 +29,11 @@ cfg = LanguageModelSAERunnerConfig(
     use_cached_activations=True,
     cached_activations_path=ACTIVATIONS_PATH,
 
-    sae=StandardTrainingSAEConfig(
-        d_in=1024, # Matches hook_mlp_out for tiny-stories-1L-21M
-        d_sae=16 * 1024,
+    sae= TopKTrainingSAEConfig(
+        d_in=MODEL_HIDDEN_D,
+        d_sae=SAE_DIMENSIONS,
+        k=NUM_FEATURES,
         apply_b_dec_to_input=True,
-        normalize_activations="expected_average_only_in",
-        l1_coefficient=5,
-        l1_warm_up_steps=L1_WARM_UP_STEPS,
     ),
 
     lr=5e-5,
