@@ -1,18 +1,5 @@
 # For local debugging only
 services:
-#  chromadb:
-#    image: chromadb/chroma:latest
-#    ports:
-#      - "8000:8000"
-#    environment:
-#      - ALLOW_RESET=true
-#      - IS_PERSISTENT=true
-#      - CHROMA_SERVER_CORS_ALLOW_ORIGINS=["*"]
-#    volumes:
-#      - ./data/chromadb:/data
-#    networks:
-#      - app-network
-
   chromadb-ui:
     build:
       context: chromadb-ui

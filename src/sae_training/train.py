@@ -11,15 +11,15 @@ from src.config import *
 # --- Config ---
 MODEL_HIDDEN_D = 12288
 TOTAL_TRAINING_STEPS = 200_000
-BATCH_SIZE = 4096 # todo: config
+BATCH_SIZE = 4096       # bump to 8192–16384 if vram allows
 LR_WARM_UP_STEPS = 0
 LR_DECAY_STEPS = TOTAL_TRAINING_STEPS // 5  # 20% of training
-L1_WARM_UP_STEPS = TOTAL_TRAINING_STEPS // 20  # 5% of training
+L1_WARM_UP_STEPS = TOTAL_TRAINING_STEPS // 40  # 2.5% of training
 L1_COEFFICIENT = 0.01
 LAYER = 12
 SAE_DIMENSIONS = 512
-NUM_FEATURES = 2
-TARGET_HOOK = get_act_name("post", layer=LAYER)  # "blocks.12.mlp.hook_post"
+NUM_FEATURES = 2 # maybe bump to 4?
+TARGET_HOOK = get_act_name("post", layer=LAYER)
 ACTIVATIONS_PATH = f"layer{LAYER:02d}_post.f16"
 # --------------
 
