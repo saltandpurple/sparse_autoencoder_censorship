@@ -33,8 +33,8 @@ NUM_FEATURES = 40 # adjust after testing
 
 hf_model = AutoModelForCausalLM.from_pretrained(
     MODEL_PATH,
-    # torch_dtype="bfloat16",
-    # local_files_only=True
+    torch_dtype="bfloat16",
+    local_files_only=True
 )
 
 cfg = LanguageModelSAERunnerConfig(
@@ -45,6 +45,7 @@ cfg = LanguageModelSAERunnerConfig(
     # cached_activations_path=ACTIVATIONS_PATH,
     dataset_trust_remote_code=True,
     dataset_path="cerebras/SlimPajama-627B",
+    # context_size=1024,
     streaming=True,
     model_from_pretrained_kwargs={
         "local_files_only": True,
