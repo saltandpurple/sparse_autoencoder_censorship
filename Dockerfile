@@ -13,7 +13,6 @@ WORKDIR $PV
 RUN mkdir -p $PV/.cache/{pip,huggingface,datasets,torch} $PV/tmp
 ENV PIP_CACHE_DIR=$PV/.cache/pip
 ENV HF_HOME=$PV/.cache/huggingface
-ENV TRANSFORMERS_CACHE=$PV/.cache/huggingface/hub
 ENV HF_DATASETS_CACHE=$PV/.cache/datasets
 ENV TORCH_HOME=$PV/.cache/torch
 ENV TMPDIR=$PV/tmp
@@ -52,7 +51,8 @@ RUN pip install -U --ignore-installed blinker
 
 COPY requirements.txt .
 RUN pip install -r requirements.txt
-COPY src/ $PV/src/
+COPY .env  .
+COPY src/ ./src/
 
 # clean up
 RUN pip cache purge

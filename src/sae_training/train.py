@@ -1,5 +1,6 @@
 import os
 import torch
+from dotenv import load_dotenv
 from sae_lens import (
     LanguageModelSAERunnerConfig,
     LanguageModelSAETrainingRunner,
@@ -9,14 +10,15 @@ from sae_lens import (
 from transformer_lens.utils import get_act_name
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
+load_dotenv()
 
 # --- Config ---
 MODEL_HIDDEN_D = 12288
 LAYER = 12
 TARGET_HOOK = get_act_name("post", layer=LAYER)
 ACTIVATIONS_PATH = f"layer{LAYER:02d}_post.f16"
-SUBJECT_MODEL = "deepseek-r1-0528-qwen3-8b"
-MODEL_PATH = os.path.join("/workspace/models/", SUBJECT_MODEL)
+SUBJECT_MODEL = "deepseek-r1-0528-qwen3-8b@gf16"
+MODEL_PATH = os.path.join(os.getenv("MODEL_STORAGE_DIR"), SUBJECT_MODEL)
 MODEL_ALIAS = "Qwen/Qwen3-8B"
 
 TOTAL_TRAINING_STEPS = 10_000
