@@ -16,7 +16,7 @@ LAYER = 12
 BATCH_SIZE = 8
 MAX_SEQUENCE_LENGTH = 512
 MODEL_NUM_LAYERS = 36
-TARGET_ROWS = 10_000
+TARGET_ROWS = 200_000
 RATIO_NEG_TO_POS = 9
 TARGET_HOOK = get_act_name("post", layer=LAYER)  # "blocks.12.mlp.hook_post"
 ACTIVATIONS_PATH = f"layer{LAYER:02d}_post.f16"
@@ -38,8 +38,7 @@ def main():
         where={
             "censored": {"$eq": True},
         },
-        include=["metadatas"],
-        limit=1000
+        include=["metadatas"]
     )
     positive_rows = len(positive_collection["metadatas"])
     positive_ds = [element["question"] for element in positive_collection["metadatas"]]
