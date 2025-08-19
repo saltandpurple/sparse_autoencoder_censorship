@@ -5,12 +5,9 @@ RUN apt update && apt install nmap curl nano rsync -y
 
 # Install & setup tailscale
 RUN curl -fsSL https://tailscale.com/install.sh | sh
-# todo: fix this
-RUN tailscaled --tun=userspace-networking --socks5-server=localhost:1055 >/tmp/ts.log 2>&1 &
 
-
-# setup workspace
 ENV PV=/workspace
+WORKDIR $PV
 
 # redirect all caches/tmp to the volume
 RUN mkdir -p $PV/.cache/{pip,huggingface,datasets,torch} $PV/tmp
@@ -38,27 +35,33 @@ export TRANSFORMERS_CACHE=$PV/.cache/huggingface/hub
 export HF_DATASETS_CACHE=$PV/.cache/datasets
 export TORCH_HOME=$PV/.cache/torch
 export TMPDIR=$PV/tmp
-export ALL_PROXY=socks5://127.0.0.1:1055
+# export ALL_PROXY=socks5://127.0.0.1:1055
 . $PV/venv/bin/activate
 EOF
 
-# configure venv & install dependencies
+# configure venv
 RUN python3 -m venv $PV/venv
-RUN source $PV/venv/bin/activate
+ENV VIRTUAL_ENV=$PV/venv
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+# install deps
 RUN pip install --upgrade pip
 RUN python3 -m pip install -U pip setuptools wheel pysocks
 RUN export PIP_BREAK_SYSTEM_PACKAGES=1 # optional, in case of blinker issue
 RUN pip install -U --ignore-installed blinker
 
-# todo: go about this differently
 COPY requirements.txt .
 RUN pip install -r requirements.txt
-
+COPY src/ $PV/src/
 
 # clean up
 RUN pip cache purge
 RUN rm -rf ~/.cache/* /root/.cache/* $HOME/.huggingface/* 2>/dev/null
 
+# init
+COPY src/init.sh /usr/local/bin/init.sh
+RUN chmod +x /usr/local/bin/init.sh
+ENTRYPOINT ["/usr/local/bin/init.sh"]
 
 
 
