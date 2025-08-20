@@ -23,8 +23,8 @@ MODEL_PATH = os.path.join(os.getenv("MODEL_STORAGE_DIR"), SUBJECT_MODEL)
 MODEL_ALIAS = "Qwen/Qwen3-8B"
 
 TOTAL_TRAINING_STEPS = 10_000
-BATCH_SIZE = 2048
-BATCHES_IN_BUFFER = 48
+BATCH_SIZE = 256
+BATCHES_IN_BUFFER = 12
 TOTAL_TRAINING_TOKENS = TOTAL_TRAINING_STEPS * BATCH_SIZE
 NUM_CHECKPOINTS = 1
 LR_WARM_UP_STEPS = TOTAL_TRAINING_STEPS // 40  # 2.5% of training
@@ -57,7 +57,7 @@ cfg = LanguageModelSAERunnerConfig(
     # cached_activations_path=ACTIVATIONS_PATH,
     dataset_trust_remote_code=True, # deprecated
     dataset_path="cerebras/SlimPajama-627B",
-    context_size=1024,
+    # context_size=512,
     streaming=True,
     model_from_pretrained_kwargs={
         "local_files_only": True,
