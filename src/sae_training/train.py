@@ -1,41 +1,54 @@
 import os
 import torch
+from dotenv import load_dotenv
 from sae_lens import (
     LanguageModelSAERunnerConfig,
     LanguageModelSAETrainingRunner,
     TopKTrainingSAEConfig,
-    LoggingConfig,
+    LoggingConfig
 )
+from transformer_lens import HookedTransformer
 from transformer_lens.utils import get_act_name
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
+load_dotenv()
 
 # --- Config ---
 MODEL_HIDDEN_D = 12288
 LAYER = 12
 TARGET_HOOK = get_act_name("post", layer=LAYER)
 ACTIVATIONS_PATH = f"layer{LAYER:02d}_post.f16"
-SUBJECT_MODEL = "deepseek-r1-0528-qwen3-8b"
-MODEL_PATH = os.path.join("/workspace/models/", SUBJECT_MODEL)
+SUBJECT_MODEL = "deepseek-r1-0528-qwen3-8b@gf16"
+MODEL_PATH = os.path.join(os.getenv("MODEL_STORAGE_DIR"), SUBJECT_MODEL)
 MODEL_ALIAS = "Qwen/Qwen3-8B"
 
-TOTAL_TRAINING_STEPS = 10_000
-BATCH_SIZE = 2048
-BATCHES_IN_BUFFER = 48
+TOTAL_TRAINING_STEPS = 30_000
+BATCH_SIZE = 256
+BATCHES_IN_BUFFER = 12
 TOTAL_TRAINING_TOKENS = TOTAL_TRAINING_STEPS * BATCH_SIZE
-NUM_CHECKPOINTS = 1
+NUM_CHECKPOINTS = 0
 LR_WARM_UP_STEPS = TOTAL_TRAINING_STEPS // 40  # 2.5% of training
 LR_DECAY_STEPS = TOTAL_TRAINING_STEPS // 5  # 20% of training
 SAE_DIMENSIONS = 512
-NUM_FEATURES = 40 # adjust after testing
+NUM_FEATURES = 120 # adjust after testing
 
 # --------------
 
-hf_model = AutoModelForCausalLM.from_pretrained(
-    MODEL_PATH,
-    torch_dtype="bfloat16",
-    local_files_only=True
-)
+# hf_model = AutoModelForCausalLM.from_pretrained(
+#     MODEL_PATH,
+#     torch_dtype="bfloat16",
+#     local_files_only=True
+# )
+# tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, trust_remote_code=True)
+#
+# model = HookedTransformer.from_pretrained_no_processing(
+#     MODEL_ALIAS,
+#     hf_model=hf_model,
+#     tokenizer=tokenizer,
+#     device="cuda",
+#     torch_dtype=torch.bfloat16,
+#     local_files_only=True
+# )
 
 cfg = LanguageModelSAERunnerConfig(
     model_name="Qwen/Qwen3-8b", # required, fails otherwise
@@ -43,13 +56,12 @@ cfg = LanguageModelSAERunnerConfig(
     training_tokens=TOTAL_TRAINING_TOKENS,
     # use_cached_activations=False,
     # cached_activations_path=ACTIVATIONS_PATH,
-    dataset_trust_remote_code=True,
     dataset_path="cerebras/SlimPajama-627B",
-    # context_size=1024,
+    context_size=512,
     streaming=True,
     model_from_pretrained_kwargs={
-        "local_files_only": True,
-        "hf_model": hf_model,
+        # "local_files_only": True,
+        # "hf_model": hf_model,
         "dtype": "bfloat16",
         "trust_remote_code": True
     },
@@ -82,4 +94,5 @@ cfg = LanguageModelSAERunnerConfig(
     checkpoint_path="checkpoints",
     dtype="float32",
 )
+# sparse_autoencoder = LanguageModelSAETrainingRunner(cfg, override_model=model).run()
 sparse_autoencoder = LanguageModelSAETrainingRunner(cfg).run()

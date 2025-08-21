@@ -21,7 +21,7 @@ RATIO_NEG_TO_POS = 9
 TARGET_HOOK = get_act_name("post", layer=LAYER)  # "blocks.12.mlp.hook_post"
 ACTIVATIONS_PATH = f"layer{LAYER:02d}_post.f16"
 INDEX_PATH = "captured_index.jsonl"
-MODEL_PATH = os.path.join(os.getenv("MODEL_STORAGE_DIR", ""), SUBJECT_MODEL)
+MODEL_PATH = os.path.join(os.getenv("MODEL_STORAGE_DIR"), SUBJECT_MODEL)
 MODEL_ALIAS = "Qwen/Qwen3-8B"
 # --------------
 
