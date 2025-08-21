@@ -18,7 +18,6 @@ WORKDIR /workspace
 #ENV TMPDIR=$PV/tmp
 
 ## symlink default cache locations to the volume
-# todo: moronic, remove
 #RUN mkdir -p ~/.cache
 #RUN rm -rf ~/.cache/{pip,huggingface,torch} 2>/dev/null
 #RUN ln -s $PV/.cache/pip        ~/.cache/pip
@@ -26,18 +25,16 @@ WORKDIR /workspace
 #RUN ln -s $PV/.cache/torch      ~/.cache/torch
 
 
-# moronic
 # export PV=/workspace
 # export PIP_CACHE_DIR=$PV/.cache/pip
-
-# export TORCH_HOME=$PV/.cache/torch
-# export TMPDIR=$PV/tmp
 
 # configure bashrc
 # todo: remove superfluous stuff
 RUN cat >> ~/.bashrc <<'EOF'
 export HF_HOME=/data/.cache/huggingface
 export HF_DATASETS_CACHE=/data/.cache/datasets
+export TORCH_HOME=/data/.cache/torch
+export TMPDIR=/data/tmp
 # export ALL_PROXY=socks5://127.0.0.1:1055
 . venv/bin/activate
 EOF

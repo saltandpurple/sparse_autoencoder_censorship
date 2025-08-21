@@ -22,15 +22,15 @@ SUBJECT_MODEL = "deepseek-r1-0528-qwen3-8b@gf16"
 MODEL_PATH = os.path.join(os.getenv("MODEL_STORAGE_DIR"), SUBJECT_MODEL)
 MODEL_ALIAS = "Qwen/Qwen3-8B"
 
-TOTAL_TRAINING_STEPS = 10_000
+TOTAL_TRAINING_STEPS = 30_000
 BATCH_SIZE = 256
 BATCHES_IN_BUFFER = 12
 TOTAL_TRAINING_TOKENS = TOTAL_TRAINING_STEPS * BATCH_SIZE
-NUM_CHECKPOINTS = 1
+NUM_CHECKPOINTS = 0
 LR_WARM_UP_STEPS = TOTAL_TRAINING_STEPS // 40  # 2.5% of training
 LR_DECAY_STEPS = TOTAL_TRAINING_STEPS // 5  # 20% of training
 SAE_DIMENSIONS = 512
-NUM_FEATURES = 40 # adjust after testing
+NUM_FEATURES = 120 # adjust after testing
 
 # --------------
 
@@ -57,14 +57,14 @@ cfg = LanguageModelSAERunnerConfig(
     # use_cached_activations=False,
     # cached_activations_path=ACTIVATIONS_PATH,
     dataset_path="cerebras/SlimPajama-627B",
-    # context_size=512,
+    context_size=512,
     streaming=True,
-    # model_from_pretrained_kwargs={
-    #     "local_files_only": True,
-    #     "hf_model": hf_model,
-    #     "dtype": "bfloat16",
-    #     "trust_remote_code": True
-    # },
+    model_from_pretrained_kwargs={
+        # "local_files_only": True,
+        # "hf_model": hf_model,
+        "dtype": "bfloat16",
+        "trust_remote_code": True
+    },
 
     sae= TopKTrainingSAEConfig(
         d_in=MODEL_HIDDEN_D,
