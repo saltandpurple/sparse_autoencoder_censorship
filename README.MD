@@ -1,5 +1,5 @@
 # Mapping Censorship in a Chinese LLM through training a Sparse Autoencoder
----
+
 ## Model choice
 
 ### Subject
@@ -14,7 +14,7 @@ I went for a Deepseek-based Qwen3-Distill ([deepseek-ai/DeepSeek-R1-0528-Qwen3-8
 ---
 ### Methodology
 
-### Prompts / training token aggregation
+### Prompt / training token aggregation
 1. I collect a set of censorship-triggering prompts with the use of o4-mini
 2. We deduplicate, then pass the prompt on to the subject model, then evaluate & categorize the response with gpt-4.1.-mini (is it censored and if so, which type of censorship does it exhibit?)
 3. Afterwards, storage in chromadb. Cheap, easy to setup. Would probably use Qdrant in a more professional context and to retain speed with larger dataset sizes.
@@ -22,6 +22,10 @@ I went for a Deepseek-based Qwen3-Distill ([deepseek-ai/DeepSeek-R1-0528-Qwen3-8
 5. I built a simple dashboard to visualize prompt diversity as well as censorship category distribution. Not very performant ATM when the chromadb has a few thousand entries and isn't running locally, but that's primarily a lookup-latency/caching issue.
 
 ### Activation capture
-I initially went ahead and captured the activations in a dedicated step
+I initially went ahead and captured the activations in a dedicated step, so I could do several training runs on the SAE while reusing activations. Turns out SAELens now supports activation caching (this framework is still very young and rapidly developed), so this step is superfluous. 
+
+### SAE training
+This one was actually quite finicky, from a setup perspective - primarily because SAELens expects you to pick from a predefined list of models, then attempts to download them from HF and throws an actual error if the model name does not correspond to an entry in its predefined list.
+The Qwen3-architecture IS supported, but since the name of the distill doesn't match an entry, I had to trick it into using the local weights by renaming the model, letting it download the qwen3-info files from HF and then mounting my own custom weights. Unnecessarily complicated, but then again, the library is quite young, as mentioned.
 
    
