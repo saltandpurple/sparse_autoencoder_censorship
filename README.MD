@@ -31,13 +31,18 @@ As evident by this plot, the model almost universally defaults to a "standard pa
 
 ![umap_question_embeddings.png](umap_question_embeddings.png)
 
-Questions are fairly diverse (though cosine-similarity of the embeddings is around 0.7, so not quite as low as I'd like. Probably because of a) the limited number of topics and more importantly, b) the structure is frequently along the same lines, either a question or a request for elaboration.
+Questions are reasonably diverse - though cosine-similarity of the embeddings is around 0.7, so not quite as low as I'd like. Probably because of a) the limited number of topics and b) the structure being frequently along the same lines, either a question or a request for elaboration.
 
 ![umap_response_embeddings.png](umap_response_embeddings.png)
 
-Despite that, the responses (as evident by the tight clustering in this UMAP)
+Despite that, the responses (as evident by the tight clustering in the UMAP) are almost identical, indicating a strong preference for "canned" replies. These usually read like straight out of a Xinhua-publication. Examples
+1. - Question:
+   - Response:
 
 ![response_length_by_category.png](response_length_by_category.png)
+
+This tracks with the response length being very narrow as well. Always the same scheme. 
+
 ### Activation capture
 I initially went ahead and captured the activations in a dedicated step, so I could do several training runs on the SAE while reusing activations. Turns out SAELens now supports activation caching (this framework is still very young and rapidly developed), so this step is superfluous. 
 
