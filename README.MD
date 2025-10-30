@@ -15,13 +15,29 @@ I went for a Deepseek-based Qwen3-Distill ([deepseek-ai/DeepSeek-R1-0528-Qwen3-8
 1. I collect a set of censorship-triggering prompts with the use of o4-mini
 2. We deduplicate, then pass the prompt on to the subject model, then evaluate & categorize the response with gpt-4.1.-mini (is it censored and if so, which type of censorship does it exhibit?)
 3. Afterwards, storage in chromadb. Cheap, easy to setup. Would probably use Qdrant in a more professional context and to retain speed with larger dataset sizes.
-4. I use the cerebras/SlimPajama-627B as a negative-dataset (random text, essentially). I only sample from it, to get between 5 and 10 million tokens for training.
+4. I use the cerebras/SlimPajama-627B as a negative-control-dataset (random text, essentially). I only sample from it, to get between 5 and 10 million tokens for training.
 5. I built a simple dashboard to visualize prompt diversity as well as censorship category distribution. Not very performant ATM when the chromadb has a few thousand entries and isn't running locally, but that's primarily a lookup-latency/caching issue. Standard streamlit stuff, so install deps and then just run if from the root directory.
 ```
 streamlit run dashboards/dashboard.py
 ```
 6. Also implemented a very rudimentary chromadb-ui for debugging. Nothing fancy.
 
+#### Quick dataset evaluation
+Some plots from the dashboard - the prompts listed here do not include the control-dataset, only the prompts generated specifically to evoke censorship:
+
+![censorship_category_distribution.png](censorship_category_distribution.png)
+
+As evident by this plot, the model almost universally defaults to a "standard party line" when confronted with an issue the CCP considers problematic. The prompts were NOT specifically designed to elicit this kind of behaviour. Instead, the engineers must have reinforcement learned the hell out of it to deliberately get it to fall back to the party line on the faintest hint of a "controversial" topic.
+
+![umap_question_embeddings.png](umap_question_embeddings.png)
+
+Questions are fairly diverse (though cosine-similarity of the embeddings is around 0.7, so not quite as low as I'd like. Probably because of a) the limited number of topics and more importantly, b) the structure is frequently along the same lines, either a question or a request for elaboration.
+
+![umap_response_embeddings.png](umap_response_embeddings.png)
+
+Despite that, the responses (as evident by the tight clustering in this UMAP)
+
+![response_length_by_category.png](response_length_by_category.png)
 ### Activation capture
 I initially went ahead and captured the activations in a dedicated step, so I could do several training runs on the SAE while reusing activations. Turns out SAELens now supports activation caching (this framework is still very young and rapidly developed), so this step is superfluous. 
 
