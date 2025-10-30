@@ -1,7 +1,5 @@
-# Mapping Censorship in a Chinese LLM through training a Sparse Autoencoder
-
+# Mapping Censorship in a Chinese LLM through a Sparse Autoencoder
 ## Model choice
-
 ### Subject
 I went for a Deepseek-based Qwen3-Distill ([deepseek-ai/DeepSeek-R1-0528-Qwen3-8B](https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B)) for several reasons:
 1. 8 billion params is a reasonable tradeoff where you get meaningful features (instead of everything collapsing into a kind of "feature-soup" with smaller models), but the model still fits into the VRAM of an RTX 4090 at full precision and token requirements remaind handleable.
@@ -11,15 +9,18 @@ I went for a Deepseek-based Qwen3-Distill ([deepseek-ai/DeepSeek-R1-0528-Qwen3-8
 ### Generator & helper models
 * Generator: I chose o4-mini because it was reasonably affordable, sufficiently creative and (this one was weird and annoying) it actually complied with the request to generate these prompts. Other models, including o3(-mini) frequently refused on obscure "security" grounds. Ridiculous!
 * Evaluator: gpt-4.1-mini. Cheap (no o5 was available at the time), relatively fast and reliable.
----
-### Methodology
 
+## Methodology
 ### Prompt / training token aggregation
 1. I collect a set of censorship-triggering prompts with the use of o4-mini
 2. We deduplicate, then pass the prompt on to the subject model, then evaluate & categorize the response with gpt-4.1.-mini (is it censored and if so, which type of censorship does it exhibit?)
 3. Afterwards, storage in chromadb. Cheap, easy to setup. Would probably use Qdrant in a more professional context and to retain speed with larger dataset sizes.
 4. I use the cerebras/SlimPajama-627B as a negative-dataset (random text, essentially). I only sample from it, to get between 5 and 10 million tokens for training.
-5. I built a simple dashboard to visualize prompt diversity as well as censorship category distribution. Not very performant ATM when the chromadb has a few thousand entries and isn't running locally, but that's primarily a lookup-latency/caching issue.
+5. I built a simple dashboard to visualize prompt diversity as well as censorship category distribution. Not very performant ATM when the chromadb has a few thousand entries and isn't running locally, but that's primarily a lookup-latency/caching issue. Standard streamlit stuff, so install deps and then just run if from the root directory.
+```
+streamlit run dashboards/dashboard.py
+```
+6. Also implemented a very rudimentary chromadb-ui for debugging. Nothing fancy.
 
 ### Activation capture
 I initially went ahead and captured the activations in a dedicated step, so I could do several training runs on the SAE while reusing activations. Turns out SAELens now supports activation caching (this framework is still very young and rapidly developed), so this step is superfluous. 
@@ -27,5 +28,7 @@ I initially went ahead and captured the activations in a dedicated step, so I co
 ### SAE training
 This one was actually quite finicky, from a setup perspective - primarily because SAELens expects you to pick from a predefined list of models, then attempts to download them from HF and throws an actual error if the model name does not correspond to an entry in its predefined list.
 The Qwen3-architecture IS supported, but since the name of the distill doesn't match an entry, I had to trick it into using the local weights by renaming the model, letting it download the qwen3-info files from HF and then mounting my own custom weights. Unnecessarily complicated, but then again, the library is quite young, as mentioned.
+
+
 
    
