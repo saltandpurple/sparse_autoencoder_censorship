@@ -71,11 +71,12 @@ Less than 1% occurrence of refusals among responses I consider to be censored - 
 
 
 ### Activation capture
-I initially went ahead and captured the activations in a dedicated step, so I could do several training runs on the SAE while reusing activations. Turns out SAELens now supports activation caching (this framework is still very young and rapidly developed), so this step is superfluous. 
+I initially went ahead and captured the activations in a dedicated step, so I could do several training runs on the SAE while reusing activations. Turns out SAELens now supports activation caching (this framework is still very young and rapidly developed), so this step is superfluous. Left the code in there (src.activation_capture), in case I switch to a different sae-framework (YAGNI, I know).
 
 ### SAE training
 This one was actually quite finicky, from a setup perspective - primarily because SAELens expects you to pick from a predefined list of models, then attempts to download them from HF and throws an actual error if the model name does not correspond to an entry in its predefined list.
-The Qwen3-architecture IS supported, but since the name of the distill doesn't match an entry, I had to trick it into using the local weights by renaming the model, letting it download the qwen3-info files from HF and then mounting my own custom weights. Unnecessarily complicated, but then again, the library is quite young, as mentioned.
+The Qwen3-architecture IS supported, but since the name of the distilled-model doesn't match an entry in the predefined, I had to trick it into using the local weights by renaming the model, letting it download the qwen3-info files from HF and then mounting my own custom weights. Unnecessarily complicated, but then again, the library is quite young, as mentioned.
+
 
 
 
