@@ -34,34 +34,34 @@ NUM_FEATURES = 120 # adjust after testing
 
 # --------------
 
-# hf_model = AutoModelForCausalLM.from_pretrained(
-#     MODEL_PATH,
-#     torch_dtype="bfloat16",
-#     local_files_only=True
-# )
-# tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, trust_remote_code=True)
-#
-# model = HookedTransformer.from_pretrained_no_processing(
-#     MODEL_ALIAS,
-#     hf_model=hf_model,
-#     tokenizer=tokenizer,
-#     device="cuda",
-#     torch_dtype=torch.bfloat16,
-#     local_files_only=True
-# )
+hf_model = AutoModelForCausalLM.from_pretrained(
+    MODEL_PATH,
+    torch_dtype="bfloat16",
+    local_files_only=True
+)
+tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, trust_remote_code=True)
+
+model = HookedTransformer.from_pretrained_no_processing(
+    MODEL_ALIAS,
+    hf_model=hf_model,
+    tokenizer=tokenizer,
+    device="cuda",
+    torch_dtype=torch.bfloat16,
+    local_files_only=True
+)
 
 cfg = LanguageModelSAERunnerConfig(
     model_name="Qwen/Qwen3-8b", # required, fails otherwise
     hook_name=TARGET_HOOK,
     training_tokens=TOTAL_TRAINING_TOKENS,
-    # use_cached_activations=False,
+    use_cached_activations=False,
     # cached_activations_path=ACTIVATIONS_PATH,
     dataset_path="cerebras/SlimPajama-627B",
     context_size=512,
     streaming=True,
     model_from_pretrained_kwargs={
         # "local_files_only": True,
-        # "hf_model": hf_model,
+        "hf_model": hf_model,
         "dtype": "bfloat16",
         "trust_remote_code": True
     },
@@ -94,5 +94,5 @@ cfg = LanguageModelSAERunnerConfig(
     checkpoint_path="checkpoints",
     dtype="float32",
 )
-# sparse_autoencoder = LanguageModelSAETrainingRunner(cfg, override_model=model).run()
-sparse_autoencoder = LanguageModelSAETrainingRunner(cfg).run()
+sparse_autoencoder = LanguageModelSAETrainingRunner(cfg, override_model=model).run()
+# sparse_autoencoder = LanguageModelSAETrainingRunner(cfg).run()

@@ -1,8 +1,17 @@
 # Mapping Censorship in a Chinese LLM through a Sparse Autoencoder
+
+## Motivation
+This project primarily serves as a hands-on approach for me to get deeper into mechanistic interpretability. While I'm looking forward to see how hard the Chinese really have censored this model (spoiler: HARD), I'm primarily interested in the process, becoming more familiar with both the libraries involved and the nuances of training SAEs.
+If you can get some take-away from this project - great, feel free to copy & paste what you need. Keep in mind that mech interpretability in general and specifically SAEs are still bleeding edge and consequently changing rapidly. 
+By the time I was finished with this one, there were already several new training approaches for SAEs that show more promise. So consider this one a training approach and not a recommendation.
+
+A secondary, though unlikely and highly optimistic motivation would be the identification of distinct "censorship features" - features that we could consequently ablate and thereby steer a highly censored LLM with moderate effort and minimal compute penalty towards a more uncensored approach. I suspect, however, that the dataset both models (Deepseek & Qwen3) were trained on was handled too restrictively and the model consequently won't be able to speak truthfully without significant retraining - simply for lack of information.
+
+
 ## Model choice
 ### Subject
 I went for a Deepseek-based Qwen3-Distill ([deepseek-ai/DeepSeek-R1-0528-Qwen3-8B](https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B)) for several reasons:
-1. 8 billion params is a reasonable tradeoff where you get meaningful features (instead of everything collapsing into a kind of "feature-soup" with smaller models), but the model still fits into the VRAM of an RTX 4090 at full precision and token requirements remaind handleable.
+1. 8 billion params is a reasonable tradeoff where you (hopefully) can extract meaningful high-level features, but the model still fits into the VRAM of an RTX 4090 at full precision and token requirements remain handleable.
 2. Qwen3-architecture is supported out-of-the-box by TransformerLens/SAELens (important, so I don't spend all my time on doing the tedious bootstrapping)
 3. This particular distill displays strong censorship behavior that is easy to elicit -> actually interesting to try & map this behavior to features.
 
@@ -75,9 +84,16 @@ I initially went ahead and captured the activations in a dedicated step, so I co
 
 ### SAE training
 This one was actually quite finicky, from a setup perspective - primarily because SAELens expects you to pick from a predefined list of models, then attempts to download them from HF and throws an actual error if the model name does not correspond to an entry in its predefined list.
-The Qwen3-architecture IS supported, but since the name of the distilled-model doesn't match an entry in the predefined, I had to trick it into using the local weights by renaming the model, letting it download the qwen3-info files from HF and then mounting my own custom weights. Unnecessarily complicated, but then again, the library is quite young, as mentioned.
+The Qwen3-architecture IS supported, but since the name of the distilled-model doesn't match an entry in the predefined list (which SAELens always draws upon), I had to trick it into using the local weights by renaming the model, letting it download the qwen3-info files from HF and then mounting my own custom weights. Unnecessarily complicated, but then again, the library is quite young, as mentioned.
+
+### Observations & conclusions
+After about 100 training runs, I aborted this process for several reasons:
+1. While I was able to extract some general, low-level features (eg the base64-feature known from the [Anthropic paper](https://transformer-circuits.pub/2023/monosemantic-features#feature-base64)), higher level features refused to show themselves. This was likely due to a combination of two factors: Insufficient size of the topic-adjusted (censorship-triggering) token set (I had generated about 6000 prompts) and, more importantly, the fact that the model does not have (a set of) features specifically for these topics. 
+It became apparent from the models' thought process (though this part is speculative) that the model is unaware of the actual facts in most cases - the dataset was curated so strictly that there were probably very few, if any references to what really happens in the Xinjiang concentration camps. The model routinely considered my prompts to be "based on disinformation" or outright lies. This means that there 
 
 
+Training SAEs is generally challenging, because you ultimately attempt to strike the right balance between reconstruction accuracy and interpretability. 
+This may sound reasonably easy, but unfortunately we do not have any solid metrics for either interpretability or reconstruction quality. So most of the time, you are using (very abstract) proxies and attempt to play around with sparsity penalties & hyperparams in the hope of finding 
 
 
    
