@@ -3,7 +3,7 @@
 ## Motivation
 This project primarily serves as a hands-on approach for me to get deeper into mechanistic interpretability. While I'm looking forward to see how hard the Chinese really have censored this model (spoiler: HARD), I'm primarily interested in the process, becoming more familiar with both the libraries involved and the nuances of training SAEs.
 If you can get some take-away from this project - great, feel free to copy & paste what you need. Keep in mind that mech interpretability in general and specifically SAEs are still bleeding edge and consequently changing rapidly. 
-By the time I was finished with this one, there were already several new training approaches for SAEs that show more promise. So consider this one a training approach and not a recommendation.
+By the time I was finished with this one, there were already several new training approaches for SAEs that show more promise. So consider this one a training approach that is most likely outdated by the time you read it instead of a recommended approach. 
 
 A secondary, though unlikely and highly optimistic motivation would be the identification of distinct "censorship features" - features that we could consequently ablate and thereby steer a highly censored LLM with moderate effort and minimal compute penalty towards a more uncensored approach. I suspect, however, that the dataset both models (Deepseek & Qwen3) were trained on was handled too restrictively and the model consequently won't be able to speak truthfully without significant retraining - simply for lack of information.
 
