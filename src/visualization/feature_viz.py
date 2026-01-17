@@ -1,12 +1,16 @@
 from pathlib import Path
 from sae_lens import SAE
 from transformer_lens import HookedTransformer
-from sae_dashboard import SaeVisData, SaeVisConfig
-from sae_dashboard.feature_dashboard import get_feature_dashboard_html
+from sae_dashboard.sae_vis_data import SaeVisConfig
+from sae_dashboard.sae_vis_runner import SaeVisRunner
+from sae_dashboard.data_writing_fns import save_feature_centric_vis
+from datasets import load_dataset
 
 MODEL_NAME = "roneneldan/TinyStories-33M"
 SAE_PATH = "checkpoints/tinystories"
 OUTPUT_DIR = "visualizations"
+N_BATCHES_FOR_VIS = 50
+SEQ_LEN = 128
 
 
 def generate_feature_dashboard(
@@ -18,25 +22,24 @@ def generate_feature_dashboard(
 
     model = HookedTransformer.from_pretrained(MODEL_NAME, device="cuda")
     sae = SAE.load_from_disk(sae_path)
+    sae.to("cuda")
+
+    dataset = load_dataset("roneneldan/TinyStories", split="train", streaming=True)
+    texts = [ex["text"][:1000] for ex, _ in zip(dataset, range(N_BATCHES_FOR_VIS))]
+    tokens = model.to_tokens(texts, prepend_bos=True, truncate=True, max_length=SEQ_LEN)
 
     config = SaeVisConfig(
-        num_features_per_page=10,
-        n_contexts=20,
+        hook_point=sae.cfg.hook_name,
+        features=list(range(num_features)),
+        minibatch_size_features=16,
+        minibatch_size_tokens=64,
+        device="cuda",
     )
 
-    data = SaeVisData.create(
-        model=model,
-        sae=sae,
-        feature_indices=list(range(num_features)),
-        config=config,
-    )
+    data = SaeVisRunner(config).run(encoder=sae, model=model, tokens=tokens)
 
-    for feature_idx in range(num_features):
-        html = get_feature_dashboard_html(data, feature_idx)
-        with open(f"{output_dir}/feature_{feature_idx:04d}.html", "w") as f:
-            f.write(html)
-
-    print(f"Generated {num_features} feature visualizations in {output_dir}/")
+    save_feature_centric_vis(sae_vis_data=data, filename=f"{output_dir}/feature_dashboard.html")
+    print(f"Generated feature visualization in {output_dir}/feature_dashboard.html")
 
 
 if __name__ == "__main__":
