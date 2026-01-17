@@ -62,7 +62,7 @@ def main():
         ),
 
         lr=LR,
-        lr_scheduler_name="cosine",
+        lr_scheduler_name="cosineannealing",
         lr_warm_up_steps=LR_WARM_UP_STEPS,
         lr_decay_steps=LR_DECAY_STEPS,
         n_batches_in_buffer=BATCHES_IN_BUFFER,
@@ -71,7 +71,7 @@ def main():
         logger=LoggingConfig(
             log_to_wandb=True,
             wandb_project="sae_tinystories",
-            wandb_run_name=RUN_NAME,
+            run_name=RUN_NAME,
             wandb_log_frequency=50,
             eval_every_n_wandb_logs=10,
         ),
