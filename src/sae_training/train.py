@@ -7,15 +7,12 @@ from sae_lens import (
     LoggingConfig
 )
 from transformer_lens import HookedTransformer
-from transformer_lens.utils import get_act_name
 
 load_dotenv()
 
 # --- TinyStories-33M Config ---
 MODEL_NAME = "roneneldan/TinyStories-33M"
-MODEL_HIDDEN_D = 3072  # MLP intermediate size (768 * 4)
-LAYER = 2  # Middle layer for best features
-TARGET_HOOK = get_act_name("post", layer=LAYER)
+MODEL_HIDDEN_D = 768  # d_model (residual stream dimension)
 
 # Training config
 TOTAL_TRAINING_STEPS = 50_000
@@ -26,8 +23,8 @@ NUM_CHECKPOINTS = 5
 LR_WARM_UP_STEPS = TOTAL_TRAINING_STEPS // 20  # 5% warmup
 LR_DECAY_STEPS = TOTAL_TRAINING_STEPS // 5  # 20% decay
 
-# SAE config (expansion factor 8x)
-SAE_DIMENSIONS = MODEL_HIDDEN_D * 8  # 24576
+# SAE config (expansion factor 16x)
+SAE_DIMENSIONS = 12288  # MODEL_HIDDEN_D * 16
 NUM_FEATURES = 64  # TopK sparsity
 
 # Dataset config
@@ -46,7 +43,7 @@ def main():
 
     cfg = LanguageModelSAERunnerConfig(
         model_name=MODEL_NAME,
-        hook_name=TARGET_HOOK,
+        hook_name="blocks.2.hook_mlp_out",
         training_tokens=TOTAL_TRAINING_TOKENS,
         use_cached_activations=False,
         dataset_path=DATASET_PATH,

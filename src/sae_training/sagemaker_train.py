@@ -15,17 +15,14 @@ from sae_lens import (
     LoggingConfig
 )
 from transformer_lens import HookedTransformer
-from transformer_lens.utils import get_act_name
 
 MODEL_NAME = "roneneldan/TinyStories-33M"
-MODEL_HIDDEN_D = 3072  # MLP intermediate size (768 * 4)
-LAYER = 2
-TARGET_HOOK = get_act_name("post", layer=LAYER)
+MODEL_HIDDEN_D = 768  # d_model (residual stream dimension)
 
 TOTAL_TRAINING_STEPS = 50_000
-BATCH_SIZE = 1024
+BATCH_SIZE = 4096
 CONTEXT_SIZE = 512
-SAE_DIMENSIONS = 24576  # MODEL_HIDDEN_D * 8
+SAE_DIMENSIONS = 12288  # MODEL_HIDDEN_D * 16
 NUM_FEATURES = 64
 
 def main():
@@ -40,7 +37,7 @@ def main():
 
     cfg = LanguageModelSAERunnerConfig(
         model_name=MODEL_NAME,
-        hook_name=TARGET_HOOK,
+        hook_name="blocks.2.hook_mlp_out",
         training_tokens=TOTAL_TRAINING_STEPS * BATCH_SIZE,
         dataset_path="roneneldan/TinyStories",
         context_size=CONTEXT_SIZE,
