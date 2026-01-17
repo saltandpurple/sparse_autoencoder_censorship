@@ -1,4 +1,3 @@
-import os
 import torch
 from dotenv import load_dotenv
 from sae_lens import (
@@ -15,7 +14,6 @@ load_dotenv()
 # --- TinyStories-33M Config ---
 MODEL_NAME = "roneneldan/TinyStories-33M"
 MODEL_HIDDEN_D = 768  # TinyStories-33M hidden size
-NUM_LAYERS = 4
 LAYER = 2  # Middle layer for best features
 TARGET_HOOK = get_act_name("post", layer=LAYER)
 
