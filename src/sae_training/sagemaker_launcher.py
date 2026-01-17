@@ -21,7 +21,7 @@ def launch_training():
         environment={
             "WANDB_API_KEY": os.environ.get("WANDB_API_KEY"),
         },
-        max_run=7200,  # 2 hours
+        max_run=14400,  # 4 hours for 70M tokens
         volume_size=50,
     )
 

@@ -19,7 +19,7 @@ from transformer_lens import HookedTransformer
 MODEL_NAME = "roneneldan/TinyStories-33M"
 MODEL_HIDDEN_D = 768  # d_model (residual stream dimension)
 
-TOTAL_TRAINING_STEPS = 2442  # 10M token test run
+TOTAL_TRAINING_STEPS = 17090  # 70M tokens
 BATCH_SIZE = 4096
 CONTEXT_SIZE = 512
 SAE_DIMENSIONS = 12288  # MODEL_HIDDEN_D * 16

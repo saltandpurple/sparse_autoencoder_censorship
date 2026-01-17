@@ -15,7 +15,7 @@ MODEL_NAME = "roneneldan/TinyStories-33M"
 MODEL_HIDDEN_D = 768  # d_model (residual stream dimension)
 
 # Training config
-TOTAL_TRAINING_STEPS = 2442  # 10M token test run
+TOTAL_TRAINING_STEPS = 17090  # 70M tokens
 BATCH_SIZE = 4096
 BATCHES_IN_BUFFER = 16
 TOTAL_TRAINING_TOKENS = TOTAL_TRAINING_STEPS * BATCH_SIZE
