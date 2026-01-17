@@ -19,11 +19,11 @@ from transformer_lens import HookedTransformer
 MODEL_NAME = "roneneldan/TinyStories-33M"
 MODEL_HIDDEN_D = 768  # d_model (residual stream dimension)
 
-TOTAL_TRAINING_STEPS = 50_000
+TOTAL_TRAINING_STEPS = 2442  # 10M token test run
 BATCH_SIZE = 4096
 CONTEXT_SIZE = 512
 SAE_DIMENSIONS = 12288  # MODEL_HIDDEN_D * 16
-NUM_FEATURES = 64
+NUM_FEATURES = 96  # increased from 64 for better reconstruction
 
 def main():
     os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
@@ -50,7 +50,8 @@ def main():
             apply_b_dec_to_input=False,
         ),
 
-        lr=1e-4,
+        lr=0.0003,  # 3x higher than before
+        lr_scheduler_name="cosine",
         lr_warm_up_steps=TOTAL_TRAINING_STEPS // 20,
         lr_decay_steps=TOTAL_TRAINING_STEPS // 5,
         n_batches_in_buffer=16,

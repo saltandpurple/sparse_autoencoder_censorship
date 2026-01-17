@@ -15,7 +15,7 @@ MODEL_NAME = "roneneldan/TinyStories-33M"
 MODEL_HIDDEN_D = 768  # d_model (residual stream dimension)
 
 # Training config
-TOTAL_TRAINING_STEPS = 50_000
+TOTAL_TRAINING_STEPS = 2442  # 10M token test run
 BATCH_SIZE = 4096
 BATCHES_IN_BUFFER = 16
 TOTAL_TRAINING_TOKENS = TOTAL_TRAINING_STEPS * BATCH_SIZE
@@ -25,7 +25,7 @@ LR_DECAY_STEPS = TOTAL_TRAINING_STEPS // 5  # 20% decay
 
 # SAE config (expansion factor 16x)
 SAE_DIMENSIONS = 12288  # MODEL_HIDDEN_D * 16
-NUM_FEATURES = 64  # TopK sparsity
+NUM_FEATURES = 96  # increased from 64 for better reconstruction
 
 # Dataset config
 DATASET_PATH = "roneneldan/TinyStories"
@@ -57,7 +57,8 @@ def main():
             apply_b_dec_to_input=False,
         ),
 
-        lr=1e-4,
+        lr=0.0003,  # 3x higher than before
+        lr_scheduler_name="cosine",
         lr_warm_up_steps=LR_WARM_UP_STEPS,
         lr_decay_steps=LR_DECAY_STEPS,
         n_batches_in_buffer=BATCHES_IN_BUFFER,
