@@ -22,10 +22,14 @@ TOTAL_TRAINING_TOKENS = TOTAL_TRAINING_STEPS * BATCH_SIZE
 NUM_CHECKPOINTS = 5
 LR_WARM_UP_STEPS = TOTAL_TRAINING_STEPS // 20  # 5% warmup
 LR_DECAY_STEPS = TOTAL_TRAINING_STEPS // 5  # 20% decay
+LR = 0.0003
 
 # SAE config (expansion factor 16x)
 SAE_DIMENSIONS = 12288  # MODEL_HIDDEN_D * 16
 NUM_FEATURES = 96  # increased from 64 for better reconstruction
+
+TOKEN_COUNT_STR = f"{TOTAL_TRAINING_TOKENS // 1_000_000}M"
+RUN_NAME = f"{TOKEN_COUNT_STR}_lr{LR}_k{NUM_FEATURES}_d{SAE_DIMENSIONS}"
 
 # Dataset config
 DATASET_PATH = "roneneldan/TinyStories"
@@ -57,7 +61,7 @@ def main():
             apply_b_dec_to_input=False,
         ),
 
-        lr=0.0003,  # 3x higher than before
+        lr=LR,
         lr_scheduler_name="cosine",
         lr_warm_up_steps=LR_WARM_UP_STEPS,
         lr_decay_steps=LR_DECAY_STEPS,
@@ -67,6 +71,7 @@ def main():
         logger=LoggingConfig(
             log_to_wandb=True,
             wandb_project="sae_tinystories",
+            wandb_run_name=RUN_NAME,
             wandb_log_frequency=50,
             eval_every_n_wandb_logs=10,
         ),

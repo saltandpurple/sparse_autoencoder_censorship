@@ -24,6 +24,11 @@ BATCH_SIZE = 4096
 CONTEXT_SIZE = 512
 SAE_DIMENSIONS = 12288  # MODEL_HIDDEN_D * 16
 NUM_FEATURES = 96  # increased from 64 for better reconstruction
+LR = 0.0003
+
+TOTAL_TOKENS = TOTAL_TRAINING_STEPS * BATCH_SIZE
+TOKEN_COUNT_STR = f"{TOTAL_TOKENS // 1_000_000}M"
+RUN_NAME = f"{TOKEN_COUNT_STR}_lr{LR}_k{NUM_FEATURES}_d{SAE_DIMENSIONS}"
 
 def main():
     os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
@@ -50,7 +55,7 @@ def main():
             apply_b_dec_to_input=False,
         ),
 
-        lr=0.0003,  # 3x higher than before
+        lr=LR,
         lr_scheduler_name="cosine",
         lr_warm_up_steps=TOTAL_TRAINING_STEPS // 20,
         lr_decay_steps=TOTAL_TRAINING_STEPS // 5,
@@ -60,6 +65,7 @@ def main():
         logger=LoggingConfig(
             log_to_wandb=True,
             wandb_project="sae_tinystories",
+            wandb_run_name=RUN_NAME,
             wandb_log_frequency=50,
             eval_every_n_wandb_logs=10,
         ),
