@@ -9,8 +9,6 @@ ROLE = "arn:aws:iam::115801844135:role/service-role/AmazonSageMaker-ExecutionRol
 BUCKET = "saltandpurple-mllab"
 
 def launch_training():
-    session = sagemaker.Session()
-
     estimator = PyTorch(
         entry_point="sagemaker_train.py",
         source_dir="src/sae_training",
