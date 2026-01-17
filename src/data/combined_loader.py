@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 from datasets import load_dataset, Dataset, interleave_datasets, load_from_disk, IterableDataset
-from typing import Optional, Union
+from typing import Union
 
 logger = logging.getLogger(__name__)
 
