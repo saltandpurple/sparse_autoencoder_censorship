@@ -24,6 +24,7 @@ sae-lens>=6.5.3
 tqdm
 numpy
 wandb
+datasets
 
 # infrastructure, runpod
 ruff
