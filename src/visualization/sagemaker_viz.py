@@ -11,7 +11,7 @@ import json
 import torch
 from pathlib import Path
 from sae_lens import SAE
-from transformer_lens import HookedTransformer
+from sae_lens.analysis.hooked_sae_transformer import HookedSAETransformer
 from datasets import load_dataset
 from sae_dashboard.sae_vis_data import SaeVisConfig
 from sae_dashboard.sae_vis_runner import SaeVisRunner
@@ -67,7 +67,7 @@ def main():
     print(f"Using SAE checkpoint: {latest_checkpoint} (step {checkpoint_step})")
 
     print("Loading model...")
-    model = HookedTransformer.from_pretrained(MODEL_NAME, device="cuda")
+    model = HookedSAETransformer.from_pretrained(MODEL_NAME, device="cuda")
 
     print("Loading SAE...")
     sae = SAE.load_from_disk(str(latest_checkpoint))
@@ -76,7 +76,8 @@ def main():
     print("Loading tokens from TinyStories dataset...")
     dataset = load_dataset("roneneldan/TinyStories", split="train", streaming=True)
     texts = [ex["text"][:1000] for ex, _ in zip(dataset, range(N_BATCHES_FOR_VIS))]
-    tokens = model.to_tokens(texts, prepend_bos=True, truncate=True, max_length=SEQ_LEN)
+    tokens = model.to_tokens(texts, prepend_bos=True, truncate=True)
+    tokens = tokens[:, :SEQ_LEN]
 
     print("Finding top features by activation...")
     with torch.no_grad():
