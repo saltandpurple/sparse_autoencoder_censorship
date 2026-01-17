@@ -23,12 +23,13 @@ LAYER = 2
 TARGET_HOOK = get_act_name("post", layer=LAYER)
 
 TOTAL_TRAINING_STEPS = 50_000
-BATCH_SIZE = 4096
+BATCH_SIZE = 1024
 CONTEXT_SIZE = 512
 SAE_DIMENSIONS = 24576  # MODEL_HIDDEN_D * 8
 NUM_FEATURES = 64
 
 def main():
+    os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
     wandb.login(key=os.environ.get("WANDB_API_KEY"))
 
     model = HookedTransformer.from_pretrained(
