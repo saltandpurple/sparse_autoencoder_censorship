@@ -21,6 +21,7 @@ umap-learn
 # activation capture
 transformer_lens
 sae-lens>=6.5.3
+sae-dashboard
 tqdm
 numpy
 wandb
