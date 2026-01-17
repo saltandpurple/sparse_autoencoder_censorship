@@ -13,7 +13,7 @@ load_dotenv()
 
 # --- TinyStories-33M Config ---
 MODEL_NAME = "roneneldan/TinyStories-33M"
-MODEL_HIDDEN_D = 768  # TinyStories-33M hidden size
+MODEL_HIDDEN_D = 3072  # MLP intermediate size (768 * 4)
 LAYER = 2  # Middle layer for best features
 TARGET_HOOK = get_act_name("post", layer=LAYER)
 
@@ -27,7 +27,7 @@ LR_WARM_UP_STEPS = TOTAL_TRAINING_STEPS // 20  # 5% warmup
 LR_DECAY_STEPS = TOTAL_TRAINING_STEPS // 5  # 20% decay
 
 # SAE config (expansion factor 8x)
-SAE_DIMENSIONS = MODEL_HIDDEN_D * 8  # 6144
+SAE_DIMENSIONS = MODEL_HIDDEN_D * 8  # 24576
 NUM_FEATURES = 64  # TopK sparsity
 
 # Dataset config

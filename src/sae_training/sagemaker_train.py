@@ -18,14 +18,14 @@ from transformer_lens import HookedTransformer
 from transformer_lens.utils import get_act_name
 
 MODEL_NAME = "roneneldan/TinyStories-33M"
-MODEL_HIDDEN_D = 768
+MODEL_HIDDEN_D = 3072  # MLP intermediate size (768 * 4)
 LAYER = 2
 TARGET_HOOK = get_act_name("post", layer=LAYER)
 
 TOTAL_TRAINING_STEPS = 50_000
 BATCH_SIZE = 4096
 CONTEXT_SIZE = 512
-SAE_DIMENSIONS = 6144
+SAE_DIMENSIONS = 24576  # MODEL_HIDDEN_D * 8
 NUM_FEATURES = 64
 
 def main():
