@@ -46,4 +46,5 @@ output/
 /data/
 
 # Documentation with sensitive data
-docs/
+docs/sagemaker-quickstart.md
+docs/log-analyzer-instructions.md

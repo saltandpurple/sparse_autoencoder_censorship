@@ -1,4 +1,3 @@
-import json
 import logging
 from pathlib import Path
 from datasets import Dataset
@@ -12,7 +11,7 @@ def get_collection():
         from src.config import collection
         collection.count()
         return collection
-    except Exception as e:
+    except (ImportError, ConnectionError) as e:
         logger.warning(f"ChromaDB unavailable: {e}")
         return None
 
