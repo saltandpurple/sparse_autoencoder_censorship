@@ -30,3 +30,4 @@ datasets
 ruff
 nvitop
 httpx[socks]
+sagemaker
