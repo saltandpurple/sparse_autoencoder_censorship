@@ -1,4 +1,3 @@
-import torch
 from pathlib import Path
 from sae_lens import SAE
 from transformer_lens import HookedTransformer
@@ -32,7 +31,7 @@ def generate_feature_dashboard(
         config=config,
     )
 
-    for i, feature_idx in enumerate(range(num_features)):
+    for feature_idx in range(num_features):
         html = get_feature_dashboard_html(data, feature_idx)
         with open(f"{output_dir}/feature_{feature_idx:04d}.html", "w") as f:
             f.write(html)

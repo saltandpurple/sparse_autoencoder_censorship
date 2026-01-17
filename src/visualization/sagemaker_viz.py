@@ -6,8 +6,6 @@ subprocess.check_call([sys.executable, "-m", "pip", "install", "-q",
     "sae-lens>=6.5.3", "transformer_lens", "sae-dashboard"])
 
 import os
-import torch
-import tarfile
 from pathlib import Path
 from sae_lens import SAE
 from transformer_lens import HookedTransformer
