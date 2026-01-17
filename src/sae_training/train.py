@@ -9,90 +9,84 @@ from sae_lens import (
 )
 from transformer_lens import HookedTransformer
 from transformer_lens.utils import get_act_name
-from transformers import AutoModelForCausalLM, AutoTokenizer
 
 load_dotenv()
 
-# --- Config ---
-MODEL_HIDDEN_D = 12288
-LAYER = 12
+# --- TinyStories-33M Config ---
+MODEL_NAME = "roneneldan/TinyStories-33M"
+MODEL_HIDDEN_D = 768  # TinyStories-33M hidden size
+NUM_LAYERS = 4
+LAYER = 2  # Middle layer for best features
 TARGET_HOOK = get_act_name("post", layer=LAYER)
-ACTIVATIONS_PATH = f"layer{LAYER:02d}_post.f16"
-SUBJECT_MODEL = "deepseek-r1-0528-qwen3-8b@gf16"
-MODEL_PATH = os.path.join(os.getenv("MODEL_STORAGE_DIR"), SUBJECT_MODEL)
-MODEL_ALIAS = "Qwen/Qwen3-8B"
 
-TOTAL_TRAINING_STEPS = 30_000
-BATCH_SIZE = 256
-BATCHES_IN_BUFFER = 12
+# Training config
+TOTAL_TRAINING_STEPS = 50_000
+BATCH_SIZE = 4096
+BATCHES_IN_BUFFER = 16
 TOTAL_TRAINING_TOKENS = TOTAL_TRAINING_STEPS * BATCH_SIZE
-NUM_CHECKPOINTS = 0
-LR_WARM_UP_STEPS = TOTAL_TRAINING_STEPS // 40  # 2.5% of training
-LR_DECAY_STEPS = TOTAL_TRAINING_STEPS // 5  # 20% of training
-SAE_DIMENSIONS = 512
-NUM_FEATURES = 120 # adjust after testing
+NUM_CHECKPOINTS = 5
+LR_WARM_UP_STEPS = TOTAL_TRAINING_STEPS // 20  # 5% warmup
+LR_DECAY_STEPS = TOTAL_TRAINING_STEPS // 5  # 20% decay
 
-# --------------
+# SAE config (expansion factor 8x)
+SAE_DIMENSIONS = MODEL_HIDDEN_D * 8  # 6144
+NUM_FEATURES = 64  # TopK sparsity
 
-hf_model = AutoModelForCausalLM.from_pretrained(
-    MODEL_PATH,
-    torch_dtype="bfloat16",
-    local_files_only=True
-)
-tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, trust_remote_code=True)
+# Dataset config
+DATASET_PATH = "roneneldan/TinyStories"
+CONTEXT_SIZE = 512
 
-model = HookedTransformer.from_pretrained_no_processing(
-    MODEL_ALIAS,
-    hf_model=hf_model,
-    tokenizer=tokenizer,
-    device="cuda",
-    torch_dtype=torch.bfloat16,
-    local_files_only=True
-)
+def main():
+    device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+    print(f"Using device: {device}")
 
-cfg = LanguageModelSAERunnerConfig(
-    model_name="Qwen/Qwen3-8b", # required, fails otherwise
-    hook_name=TARGET_HOOK,
-    training_tokens=TOTAL_TRAINING_TOKENS,
-    use_cached_activations=False,
-    # cached_activations_path=ACTIVATIONS_PATH,
-    dataset_path="cerebras/SlimPajama-627B",
-    context_size=512,
-    streaming=True,
-    model_from_pretrained_kwargs={
-        # "local_files_only": True,
-        "hf_model": hf_model,
-        "dtype": "bfloat16",
-        "trust_remote_code": True
-    },
+    model = HookedTransformer.from_pretrained(
+        MODEL_NAME,
+        device=device,
+        dtype=torch.float32 if device == "mps" else torch.bfloat16,
+    )
 
-    sae= TopKTrainingSAEConfig(
-        d_in=MODEL_HIDDEN_D,
-        d_sae=SAE_DIMENSIONS,
-        k=NUM_FEATURES,
-        apply_b_dec_to_input=False,
-    ),
+    cfg = LanguageModelSAERunnerConfig(
+        model_name=MODEL_NAME,
+        hook_name=TARGET_HOOK,
+        training_tokens=TOTAL_TRAINING_TOKENS,
+        use_cached_activations=False,
+        dataset_path=DATASET_PATH,
+        context_size=CONTEXT_SIZE,
+        streaming=True,
 
-    lr=5e-5,
-    lr_warm_up_steps=LR_WARM_UP_STEPS,
-    lr_decay_steps=LR_DECAY_STEPS,
-    n_batches_in_buffer=BATCHES_IN_BUFFER,
-    train_batch_size_tokens=BATCH_SIZE,
+        sae=TopKTrainingSAEConfig(
+            d_in=MODEL_HIDDEN_D,
+            d_sae=SAE_DIMENSIONS,
+            k=NUM_FEATURES,
+            apply_b_dec_to_input=False,
+        ),
 
-    # WANDB
-    logger=LoggingConfig(
-        log_to_wandb=True,
-        wandb_project="sae_censorship",
-        wandb_log_frequency=30,
-        eval_every_n_wandb_logs=20,
-    ),
+        lr=1e-4,
+        lr_warm_up_steps=LR_WARM_UP_STEPS,
+        lr_decay_steps=LR_DECAY_STEPS,
+        n_batches_in_buffer=BATCHES_IN_BUFFER,
+        train_batch_size_tokens=BATCH_SIZE,
 
-    # Misc
-    device="cuda",
-    seed=42,
-    n_checkpoints=NUM_CHECKPOINTS,
-    checkpoint_path="checkpoints",
-    dtype="float32",
-)
-sparse_autoencoder = LanguageModelSAETrainingRunner(cfg, override_model=model).run()
-# sparse_autoencoder = LanguageModelSAETrainingRunner(cfg).run()
+        logger=LoggingConfig(
+            log_to_wandb=True,
+            wandb_project="sae_tinystories",
+            wandb_log_frequency=50,
+            eval_every_n_wandb_logs=10,
+        ),
+
+        device=device,
+        seed=42,
+        n_checkpoints=NUM_CHECKPOINTS,
+        checkpoint_path="checkpoints/tinystories",
+        dtype="float32" if device == "mps" else "bfloat16",
+    )
+
+    runner = LanguageModelSAETrainingRunner(cfg, override_model=model)
+    sae = runner.run()
+
+    print(f"Training complete. SAE saved to {cfg.checkpoint_path}")
+    return sae
+
+if __name__ == "__main__":
+    main()
