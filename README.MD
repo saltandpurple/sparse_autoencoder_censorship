@@ -86,6 +86,31 @@ I initially went ahead and captured the activations in a dedicated step, so I co
 This one was actually quite finicky, from a setup perspective - primarily because SAELens expects you to pick from a predefined list of models, then attempts to download them from HF and throws an actual error if the model name does not correspond to an entry in its predefined list.
 The Qwen3-architecture IS supported, but since the name of the distilled-model doesn't match an entry in the predefined list (which SAELens always draws upon), I had to trick it into using the local weights by renaming the model, letting it download the qwen3-info files from HF and then mounting my own custom weights. Unnecessarily complicated, but then again, the library is quite young, as mentioned.
 
+## Training Results
+
+Training on 70M tokens from the combined dataset (censorship-triggering prompts + SlimPajama control).
+
+### Key Metrics
+- **Explained Variance**: 0.793 (79.3% of activation variance captured)
+- **MSE Loss**: 19.6
+- **Dead Features**: 1 out of 12,288 (0.008%)
+- **L0 Sparsity**: 96 active features per token (fixed via TopK)
+- **CE Loss Score**: 0.87 (model retains language modeling capability)
+
+### Training Dynamics
+
+![Explained Variance](assets/training/explained_variance.png)
+Rapid convergence within first 2500 steps, stable at ~0.8 thereafter.
+
+![Dead Features](assets/training/dead_features.png)
+Dramatic spike to ~4000 dead features early in training, followed by near-complete recovery. Auxiliary loss successfully reactivated dormant features.
+
+![CE Loss Score](assets/training/ce_loss_score.png)
+Cross-entropy loss score climbs steadily to 0.87, indicating the SAE reconstruction preserves the model's predictive capability.
+
+![Learning Rate Schedule](assets/training/learning_rate.png)
+Cosine decay from lr=0.0003 with warmup. Smooth decay over ~17,500 steps.
+
 ### Observations & conclusions
 Training SAEs is generally challenging, because you ultimately attempt to strike the right balance between reconstruction accuracy and interpretability.
 This may sound reasonably easy, but unfortunately we do not have any solid metrics for either interpretability or reconstruction quality. So most of the time, you are using (very abstract) proxies and attempt to play around with sparsity penalties & hyperparams in the hope of being neither too sparse (meaning: lots of dead latents) or too dense (you're not extracting meaningful latents, just ones that activate most of the time).
@@ -97,5 +122,22 @@ This negated my secondary motivation as outlined above - I would have to generat
 3. My primary motivation was fulfilled: I learned a lot about training SAEs, model internals and also quite a bit about Chinese censorship. I had a blast doing it. Following Neel Nanda's advice to abandon (training-)projects ruthlessly after you have extracted what you came to extract, I will move on to the next one.
 
 
+## Feature Visualization
 
-   
+SAE feature visualization shows which tokens and contexts activate specific learned features. This helps interpret what patterns the SAE has extracted from the model's internal representations.
+
+**Dashboard**: [visualizations/feature_dashboard.html](visualizations/feature_dashboard.html)
+
+### Notable Features (TinyStories-33M validation run)
+
+The visualization was generated on a TinyStories-33M model at `blocks.2.hook_mlp_out` with a 12,288-feature SAE.
+
+| Feature | Max Activation | Pattern |
+|---------|----------------|---------|
+| 7715 | 5842 | Outlier feature with 10x higher activation than others - likely a position or structural feature |
+| 2332 | 517 | High-frequency feature |
+| 687 | 505 | High-frequency feature |
+
+Most features activate in the 80-200 range on TinyStories text. The top features tend to capture structural patterns (sentence endings, character names, narrative transitions) rather than semantic content at this layer depth.
+
+

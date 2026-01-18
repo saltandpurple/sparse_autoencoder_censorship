@@ -1,16 +1,50 @@
-# Claude
-.claude
-*.claude/
-claude.md
-
 # IntelliJ
 *.iml
 *.idea/
 .idea/
 .idea/**
-*.iml
+
+# Terraform
+*/.terraform/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*secret*.tfvars
+*.tfvars.json
+*secret.auto.tfvars
+
+.terraform.lock.hcl
+.terraform.tfstate.lock.info
+
+*kubeconfig-mllab
+
+# Claude
+CLAUDE.md
+.claude
+*.claude/
+.claude/
+.credentials
+.system_info
 
 # Python
-*.env
 __pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+.env
+
+# ML artifacts
+checkpoints/
+wandb/
+output/
 /data/
+
+# Documentation with sensitive data
+docs/sagemaker-quickstart.md
+docs/log-analyzer-instructions.md

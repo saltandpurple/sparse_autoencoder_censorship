@@ -1,5 +1,13 @@
+#!/usr/bin/env python
+import os
+import sys
+import subprocess
+
+subprocess.check_call([sys.executable, "-m", "pip", "install", "-q",
+    "sae-lens>=6.5.3", "transformer_lens", "wandb", "torch"])
+
 import torch
-from dotenv import load_dotenv
+import wandb
 from sae_lens import (
     LanguageModelSAERunnerConfig,
     LanguageModelSAETrainingRunner,
@@ -8,49 +16,35 @@ from sae_lens import (
 )
 from transformer_lens import HookedTransformer
 
-load_dotenv()
-
-# --- TinyStories-33M Config ---
 MODEL_NAME = "roneneldan/TinyStories-33M"
 MODEL_HIDDEN_D = 768  # d_model (residual stream dimension)
 
-# Training config
 TOTAL_TRAINING_STEPS = 17090  # 70M tokens
 BATCH_SIZE = 4096
-BATCHES_IN_BUFFER = 16
-TOTAL_TRAINING_TOKENS = TOTAL_TRAINING_STEPS * BATCH_SIZE
-NUM_CHECKPOINTS = 5
-LR_WARM_UP_STEPS = TOTAL_TRAINING_STEPS // 20  # 5% warmup
-LR_DECAY_STEPS = TOTAL_TRAINING_STEPS // 5  # 20% decay
-LR = 0.0003
-
-# SAE config (expansion factor 16x)
+CONTEXT_SIZE = 512
 SAE_DIMENSIONS = 12288  # MODEL_HIDDEN_D * 16
 NUM_FEATURES = 96  # increased from 64 for better reconstruction
+LR = 0.0003
 
-TOKEN_COUNT_STR = f"{TOTAL_TRAINING_TOKENS // 1_000_000}M"
+TOTAL_TOKENS = TOTAL_TRAINING_STEPS * BATCH_SIZE
+TOKEN_COUNT_STR = f"{TOTAL_TOKENS // 1_000_000}M"
 RUN_NAME = f"{TOKEN_COUNT_STR}_lr{LR}_k{NUM_FEATURES}_d{SAE_DIMENSIONS}"
 
-# Dataset config
-DATASET_PATH = "roneneldan/TinyStories"
-CONTEXT_SIZE = 512
-
 def main():
-    device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
-    print(f"Using device: {device}")
+    os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+    wandb.login(key=os.environ.get("WANDB_API_KEY"))
 
     model = HookedTransformer.from_pretrained(
         MODEL_NAME,
-        device=device,
-        dtype=torch.float32 if device == "mps" else torch.bfloat16,
+        device="cuda",
+        dtype=torch.bfloat16,
     )
 
     cfg = LanguageModelSAERunnerConfig(
         model_name=MODEL_NAME,
         hook_name="blocks.2.hook_mlp_out",
-        training_tokens=TOTAL_TRAINING_TOKENS,
-        use_cached_activations=False,
-        dataset_path=DATASET_PATH,
+        training_tokens=TOTAL_TRAINING_STEPS * BATCH_SIZE,
+        dataset_path="roneneldan/TinyStories",
         context_size=CONTEXT_SIZE,
         streaming=True,
 
@@ -63,9 +57,9 @@ def main():
 
         lr=LR,
         lr_scheduler_name="cosineannealing",
-        lr_warm_up_steps=LR_WARM_UP_STEPS,
-        lr_decay_steps=LR_DECAY_STEPS,
-        n_batches_in_buffer=BATCHES_IN_BUFFER,
+        lr_warm_up_steps=TOTAL_TRAINING_STEPS // 20,
+        lr_decay_steps=TOTAL_TRAINING_STEPS // 5,
+        n_batches_in_buffer=16,
         train_batch_size_tokens=BATCH_SIZE,
 
         logger=LoggingConfig(
@@ -76,18 +70,16 @@ def main():
             eval_every_n_wandb_logs=10,
         ),
 
-        device=device,
+        device="cuda",
         seed=42,
-        n_checkpoints=NUM_CHECKPOINTS,
-        checkpoint_path="checkpoints/tinystories",
-        dtype="float32" if device == "mps" else "bfloat16",
+        n_checkpoints=5,
+        checkpoint_path="/opt/ml/model",
+        dtype="bfloat16",
     )
 
     runner = LanguageModelSAETrainingRunner(cfg, override_model=model)
     sae = runner.run()
-
-    print(f"Training complete. SAE saved to {cfg.checkpoint_path}")
-    return sae
+    print("Training complete!")
 
 if __name__ == "__main__":
     main()
