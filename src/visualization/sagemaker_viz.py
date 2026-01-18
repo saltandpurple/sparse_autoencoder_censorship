@@ -81,7 +81,7 @@ def main():
 
     print("Finding top features by activation...")
     with torch.no_grad():
-        hook_name = sae.cfg.hook_name
+        hook_name = sae.cfg.metadata.hook_name
         _, cache = model.run_with_cache(tokens[:20], names_filter=[hook_name])
         acts = cache[hook_name]
         feature_acts = sae.encode(acts)
