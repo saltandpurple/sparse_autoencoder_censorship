@@ -11,6 +11,10 @@ BUCKET = "saltandpurple-mllab"
 SAE_MODEL_PATH = "s3://saltandpurple-mllab/sae-training/output/pytorch-training-2026-01-17-15-57-09-245/output/model.tar.gz"
 
 def launch_visualization():
+    wandb_api_key = os.environ.get("WANDB_API_KEY")
+    if not wandb_api_key:
+        raise ValueError("WANDB_API_KEY environment variable must be set")
+
     estimator = PyTorch(
         entry_point="sagemaker_viz.py",
         source_dir="src/visualization",
@@ -21,7 +25,7 @@ def launch_visualization():
         py_version="py310",
         output_path=f"s3://{BUCKET}/sae-visualization/output",
         environment={
-            "WANDB_API_KEY": os.environ.get("WANDB_API_KEY"),
+            "WANDB_API_KEY": wandb_api_key,
         },
         max_run=7200,  # 2 hours
         volume_size=50,
