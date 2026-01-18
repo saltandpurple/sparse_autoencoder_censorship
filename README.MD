@@ -122,5 +122,22 @@ This negated my secondary motivation as outlined above - I would have to generat
 3. My primary motivation was fulfilled: I learned a lot about training SAEs, model internals and also quite a bit about Chinese censorship. I had a blast doing it. Following Neel Nanda's advice to abandon (training-)projects ruthlessly after you have extracted what you came to extract, I will move on to the next one.
 
 
+## Feature Visualization
 
-   
+SAE feature visualization shows which tokens and contexts activate specific learned features. This helps interpret what patterns the SAE has extracted from the model's internal representations.
+
+**Dashboard**: [visualizations/feature_dashboard.html](visualizations/feature_dashboard.html)
+
+### Notable Features (TinyStories-33M validation run)
+
+The visualization was generated on a TinyStories-33M model at `blocks.2.hook_mlp_out` with a 12,288-feature SAE.
+
+| Feature | Max Activation | Pattern |
+|---------|----------------|---------|
+| 7715 | 5842 | Outlier feature with 10x higher activation than others - likely a position or structural feature |
+| 2332 | 517 | High-frequency feature |
+| 687 | 505 | High-frequency feature |
+
+Most features activate in the 80-200 range on TinyStories text. The top features tend to capture structural patterns (sentence endings, character names, narrative transitions) rather than semantic content at this layer depth.
+
+
