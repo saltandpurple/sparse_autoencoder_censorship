@@ -26,7 +26,8 @@ def generate_feature_dashboard(
 
     dataset = load_dataset("roneneldan/TinyStories", split="train", streaming=True)
     texts = [ex["text"][:1000] for ex, _ in zip(dataset, range(N_BATCHES_FOR_VIS))]
-    tokens = model.to_tokens(texts, prepend_bos=True, truncate=True, max_length=SEQ_LEN)
+    tokens = model.to_tokens(texts, prepend_bos=True, truncate=True)
+    tokens = tokens[:, :SEQ_LEN]
 
     config = SaeVisConfig(
         hook_point=sae.cfg.hook_name,
