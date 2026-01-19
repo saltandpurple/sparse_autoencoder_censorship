@@ -44,6 +44,7 @@ checkpoints/
 wandb/
 output/
 /data/
+*.tar.gz
 
 # Documentation with sensitive data
 docs/sagemaker-quickstart.md
