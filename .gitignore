@@ -47,5 +47,4 @@ output/
 *.tar.gz
 
 # Documentation with sensitive data
-docs/sagemaker-quickstart.md
-docs/log-analyzer-instructions.md
+docs/
