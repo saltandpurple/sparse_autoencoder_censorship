@@ -34,19 +34,19 @@ streamlit run dashboards/dashboard.py
 ### Brief dataset evaluation
 Some plots from the dashboard - the prompts evaluated here do not include the control-dataset, only the prompts generated specifically to evoke censorship:
 
-![censorship_category_distribution.png](censorship_category_distribution.png)
+![censorship_category_distribution.png](assets/dataset/censorship_category_distribution.png)
 
 As evident by this plot, the model almost universally defaults to a "standard party line" when confronted with an issue the CCP considers problematic. The prompts were NOT specifically designed to elicit this kind of behaviour. Instead, the engineers must have reinforcement learned the hell out of it to deliberately get it to fall back to the party line on the faintest hint of a "controversial" topic.
 
-![umap_question_embeddings.png](umap_question_embeddings.png)
+![umap_question_embeddings.png](assets/dataset/umap_question_embeddings.png)
 
 Questions are reasonably diverse - though cosine-similarity of the embeddings is around 0.7, so not quite as low as I'd like. Probably because of a) the limited number of topics and b) the structure being frequently along the same lines, either a question or a request for elaboration.
 
-![umap_response_embeddings.png](umap_response_embeddings.png)
+![umap_response_embeddings.png](assets/dataset/umap_response_embeddings.png)
 
 Despite that, the responses (as evident by the tight clustering in the UMAP) are largely identical, indicating an overwhelming preference for "canned" replies. These usually read like straight out of a Xinhua-publication. 
 
-![response_length_by_category.png](response_length_by_category.png)
+![response_length_by_category.png](assets/dataset/response_length_by_category.png)
 
 This tracks with the response length being very narrow as well. Usually the same scheme.
 
