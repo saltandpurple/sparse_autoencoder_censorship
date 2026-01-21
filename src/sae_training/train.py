@@ -2,7 +2,7 @@
 import os
 import sys
 
-IS_SAGEMAKER = os.path.exists("/opt/ml")
+IS_SAGEMAKER = "SM_MODEL_DIR" in os.environ
 
 if IS_SAGEMAKER:
     import subprocess
